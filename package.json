@@ -1,0 +1,64 @@
+{
+  "name": "prosemirror-tables-sections",
+  "version": "0.1.0",
+  "description": "prosemirror-tables derived component to support tables with caption/thead/tbody/tfoot",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "style": "style/tables.css",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./style/tables.css": "./style/tables.css"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/massifrg/prosemirror-tables-sections.git"
+  },
+  "maintainers": [
+    {
+      "name": "M. Farinella",
+      "email": "massifrg@gmail.com"
+    }
+  ],
+  "dependencies": {
+    "prosemirror-keymap": "^1.2.1",
+    "prosemirror-model": "^1.19.0",
+    "prosemirror-state": "^1.4.2",
+    "prosemirror-transform": "^1.7.1",
+    "prosemirror-view": "^1.30.2"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.42.1",
+    "@typescript-eslint/parser": "^5.42.1",
+    "builddocs": "^1.0.3",
+    "eslint": "^8.16.0",
+    "eslint-plugin-jest": "^26.2.2",
+    "ist": "^1.1.1",
+    "prettier": "^2.6.2",
+    "prosemirror-commands": "^1.5.1",
+    "prosemirror-example-setup": "^1.2.1",
+    "prosemirror-menu": "^1.2.1",
+    "prosemirror-schema-basic": "^1.2.1",
+    "prosemirror-test-builder": "^1.1.0",
+    "tsup": "^6.5.0",
+    "typescript": "^4.0.0",
+    "vite": "^3.2.4",
+    "vitest": "^0.25.3"
+  },
+  "scripts": {
+    "dev": "vite demo",
+    "build_demo": "vite build demo",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "build": "tsup",
+    "watch": "tsup --watch",
+    "build_readme": "builddocs --name tables --format markdown --main src/README.md src/*.js > README.md",
+    "format": "prettier --write .",
+    "lint": "eslint ./src/ ./test/ && prettier --check ."
+  }
+}
