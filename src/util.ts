@@ -214,22 +214,8 @@ export function getRow(
   table: Node,
   row: number,
   offset: number = 0,
-  debug: boolean = false,
+  // debug: boolean = false,
 ): { node: Node | null; pos: number } {
-  // let curRow = -1;
-  // let found: Node | null = null;
-  // let rPos = 0;
-  // table.descendants((node, pos) => {
-  //   if (found) return false;
-  //   const role = node.type.spec.tableRole;
-  //   if (role === 'table_section') return true;
-  //   if (role === 'row' && ++curRow === row) {
-  //     found = node;
-  //     rPos = pos;
-  //   }
-  //   return false;
-  // });
-  // return { node: found, pos: rPos + offset };
   let rPos = offset;
   let prevSectionsRows = 0;
   let rNode: Node | null = null;
@@ -238,10 +224,10 @@ export function getRow(
     if (section.type.spec.tableRole === 'table_section') {
       const sectionRows = section.childCount;
       if (sectionRows > 0) {
-        if (debug)
-          console.log(
-            `looking for row ${row} in section ${s}: ${section.type.name} with ${sectionRows} rows; prevSectionRows=${prevSectionsRows}`,
-          );
+        // if (debug)
+        //   console.log(
+        //     `looking for row ${row} in section ${s}: ${section.type.name} with ${sectionRows} rows; prevSectionRows=${prevSectionsRows}`,
+        //   );
         if (prevSectionsRows + sectionRows <= row) {
           if (s === table.childCount - 1) {
             return {
@@ -260,10 +246,9 @@ export function getRow(
             r++;
           }
           if (r === sectionRows) rPos++;
-          if (debug)
-            console.log(`row ${row} found @ pos ${rPos}, section ${s}`);
+          // if (debug)
+          //   console.log(`row ${row} found @ pos ${rPos}, section ${s}`);
           return {
-            // node: row-rows < sectionRows ? section.child(row - rows) : null,
             node: r >= sectionRows ? null : section.child(r),
             pos: rPos,
           };
@@ -284,9 +269,9 @@ export function rowPos(
   table: Node,
   row: number,
   pos: number = 0,
-  debug: boolean = false,
+  // debug: boolean = false,
 ) {
-  return getRow(table, row, pos, debug).pos;
+  return getRow(table, row, pos /* debug */).pos;
 }
 
 /**

@@ -9,7 +9,6 @@
 // compute the start position of the table and offset positions passed
 // to or gotten from this structure by that amount.
 import { Attrs, Node } from 'prosemirror-model';
-import { logTableMap } from '../test/log';
 import { CellAttrs, getRow, rowPos } from './util';
 
 /**
@@ -228,10 +227,10 @@ export class TableMap {
   positionAt(row: number, col: number, table: Node): number {
     if (col >= this.width) {
       const { node, pos } = getRow(table, row);
-      if (!node)
-        console.log(
-          `positionAt(row=${row},col=${col}) in table ${this.height}x${this.width}`,
-        );
+      // if (!node)
+      //   console.log(
+      //     `positionAt(row=${row},col=${col}) in table ${this.height}x${this.width}`,
+      //   );
       return pos + node!.nodeSize - 1;
     } else {
       const { map, width } = this;

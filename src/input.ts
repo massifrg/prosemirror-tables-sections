@@ -38,6 +38,9 @@ export const handleKeyDown = keydownHandler({
   ArrowUp: arrow('vert', -1),
   ArrowDown: arrow('vert', 1),
 
+  Tab: tabulation(1),
+  'Shift-Tab': tabulation(-1),
+
   'Shift-ArrowLeft': shiftArrow('horiz', -1),
   'Shift-ArrowRight': shiftArrow('horiz', 1),
   'Shift-ArrowUp': shiftArrow('vert', -1),
@@ -57,6 +60,45 @@ function maybeSetSelection(
   if (selection.eq(state.selection)) return false;
   if (dispatch) dispatch(state.tr.setSelection(selection).scrollIntoView());
   return true;
+}
+
+function tabulation(dir: Direction): Command {
+  return (state, dispatch, view) => {
+    if (!view) return false;
+    const sel = state.selection;
+    const r = state.doc.resolve(sel.head);
+    let d= r.depth
+    for (; d > 0; d--) {
+      if (r.node(d).type.spec.tableRole === 'row') break;
+    }
+    const table = r.node(d - 2);
+    const tmap = TableMap.get(table);
+    const tableStart = r.start(d - 2);
+    const cellStart = r.start(d + 1);
+    const cellPos = cellStart - tableStart - 1;
+    const map = tmap.map;
+    let i;
+    for (i = dir < 0 ? 0 : map.length - 1; i >= 0 && i < map.length; i -= dir) {
+      if (cellPos == map[i]) break;
+    }
+    if (i < 0 || i >= map.length) return false;
+    i += dir;
+    if (i < 0 || i >= map.length) return false;
+    const nextCellPos = map[i];
+    if (nextCellPos) {
+      const cell = table.nodeAt(nextCellPos);
+      if (!cell) return false;
+      if (dispatch) {
+        const from = tableStart + nextCellPos;
+        const to = from + cell.nodeSize - 1;
+        dispatch(
+          state.tr.setSelection(TextSelection.create(state.doc, from, to)),
+        );
+      }
+      return true;
+    }
+    return false;
+  };
 }
 
 function arrow(axis: Axis, dir: Direction): Command {

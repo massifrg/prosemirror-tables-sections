@@ -305,8 +305,6 @@ export function removeRow(
 ): void {
   let rPos = rowPos(table, row, tableStart);
   const nextRow = rowPos(table, row + 1, tableStart);
-  // for (let i = 0; i < row; i++) rPos += table.child(i).nodeSize;
-  // const nextRow = rPos + table.child(row).nodeSize;
 
   const mapFrom = tr.mapping.maps.length;
   tr.delete(rPos + tableStart, nextRow + tableStart);
