@@ -271,6 +271,20 @@ export class TableMap {
     };
   }
 
+  sectionOfRow(row: number): number {
+    let countRows = 0;
+    for (let i = 0; i < this.sectionRows.length; i++) {
+      countRows += this.sectionRows[i];
+      if (row < countRows) return i;
+    }
+    return -1;
+  }
+
+  rectOverOneSection(rect: Rect) {
+    const topSection = this.sectionOfRow(rect.top);
+    return topSection >= 0 && topSection == this.sectionOfRow(rect.bottom - 1);
+  }
+
   // Find the table map for the given table node.
   static get(table: Node): TableMap {
     return readFromCache(table) || addToCache(table, computeMap(table));
@@ -291,12 +305,7 @@ function computeMap(table: Node): TableMap {
     const section = table.child(c);
     if (section.type.spec.tableRole === 'table_section') {
       tmap.sectionRows.push(section.childCount);
-      let smap = computeSectionMap(
-        section,
-        width,
-        offset + 1,
-        colWidths
-      );
+      let smap = computeSectionMap(section, width, offset + 1, colWidths);
       tmap.map = tmap.map.concat(smap.map);
       if (smap.problems) {
         tmap.problems = (tmap.problems || []).concat(smap.problems);
@@ -321,7 +330,7 @@ function computeSectionMap(
   section: Node,
   width: number,
   offset: number,
-  colWidths: ColWidths
+  colWidths: ColWidths,
 ): TableMap {
   if (section.type.spec.tableRole != 'table_section')
     throw new RangeError('Not a table section node: ' + section.type.name);
@@ -384,11 +393,7 @@ function computeSectionMap(
       (problems || (problems = [])).push({ type: 'missing', row, n: missing });
     pos++;
   }
-
   const tableMap = new TableMap(width, height, map, [], problems);
-
-
-
   return tableMap;
 }
 

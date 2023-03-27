@@ -107,7 +107,7 @@ export function addColumn(
 export function addColumnBefore(
   state: EditorState,
   dispatch?: (tr: Transaction) => void,
-  view?: EditorView
+  view?: EditorView,
 ): boolean {
   if (!isInTable(state)) return false;
   if (dispatch) {
@@ -125,7 +125,7 @@ export function addColumnBefore(
 export function addColumnAfter(
   state: EditorState,
   dispatch?: (tr: Transaction) => void,
-  view?: EditorView
+  view?: EditorView,
 ): boolean {
   if (!isInTable(state)) return false;
   if (dispatch) {
@@ -175,7 +175,7 @@ export function removeColumn(
 export function deleteColumn(
   state: EditorState,
   dispatch?: (tr: Transaction) => void,
-  view?: EditorView
+  view?: EditorView,
 ): boolean {
   if (!isInTable(state)) return false;
   if (dispatch) {
@@ -425,6 +425,7 @@ export function mergeCells(
     return false;
   const rect = selectedRect(state),
     { map } = rect;
+  if (!map.rectOverOneSection(rect)) return false;
   if (cellsOverlapRectangle(map, rect)) return false;
   if (dispatch) {
     const tr = state.tr;
