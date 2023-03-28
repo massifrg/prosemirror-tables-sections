@@ -252,3 +252,7 @@ export function tableNodeTypes(schema: Schema): Record<TableRole, NodeType> {
   }
   return result;
 }
+
+export function isTableSection(node: Node): boolean {
+  return node.type.spec.tableRole === 'table_section'
+}
