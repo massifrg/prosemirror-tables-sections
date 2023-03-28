@@ -11,7 +11,7 @@ import { EditorView } from 'prosemirror-view';
 
 import { CellSelection } from './cellselection';
 import type { Direction } from './input';
-import { tableNodeTypes, TableRole } from './schema';
+import { isTableSection, tableNodeTypes, TableRole } from './schema';
 import { Rect, TableMap } from './tablemap';
 import {
   addColSpan,
@@ -19,6 +19,7 @@ import {
   CellAttrs,
   cellWrapping,
   columnIsHeader,
+  getRow,
   isInTable,
   moveCellForward,
   removeColSpan,
@@ -303,20 +304,13 @@ export function removeRow(
   { map, table, tableStart }: TableRect,
   row: number,
 ): void {
-  let rPos = rowPos(table, row, tableStart);
-  const nextRow = rowPos(table, row + 1, tableStart);
+  const { node: rNode, pos: rPos } = getRow(table, row, tableStart);
 
   const mapFrom = tr.mapping.maps.length;
-  tr.delete(rPos + tableStart, nextRow + tableStart);
+  const from = rPos + tableStart;
+  const to = from + rNode!.nodeSize - 1;
+  tr.delete(from, to);
 
-  const srows = map.sectionRows;
-  for (let s = 0, acc = 0; s < srows.length; s++) {
-    acc += srows[s];
-    if (row < acc || s === srows.length - 1) {
-      srows[s]--;
-      break;
-    }
-  }
   for (let col = 0, index = row * map.width; col < map.width; col++, index++) {
     const pos = map.map[index];
     if (row > 0 && pos == map.map[index - map.width]) {
@@ -343,6 +337,29 @@ export function removeRow(
 }
 
 /**
+ * @public
+ */
+export function removeSection(
+  tr: Transaction,
+  { map, table, tableStart }: TableRect,
+  section: number,
+): void {
+  let pos = 0;
+  let s = -1;
+  for (let i = 0; i < table.childCount; i++) {
+    const child = table.child(i);
+    if (isTableSection(child)) {
+      s++;
+      if (s == section) {
+        tr.delete(tableStart + pos, tableStart + pos + child.nodeSize);
+        return;
+      }
+    }
+    pos += child.nodeSize;
+  }
+}
+
+/**
  * Remove the selected rows from a table.
  *
  * @public
@@ -356,9 +373,22 @@ export function deleteRow(
     const rect = selectedRect(state),
       tr = state.tr;
     if (rect.top == 0 && rect.bottom == rect.map.height) return false;
+    const sectionRows = rect.map.sectionRows;
+    const sectionBottom: number[] = [sectionRows[0] || 0];
+    for (let s = 1; s < sectionRows.length; s++)
+      sectionBottom[s] = sectionBottom[s - 1] + sectionRows[s];
+    let s = sectionRows.length - 1;
+    while (s > 0 && sectionBottom[s] > rect.bottom) s--;
     for (let i = rect.bottom - 1; ; i--) {
-      removeRow(tr, rect, i);
-      if (i == rect.top) break;
+      const firstRowOfSection = sectionBottom[s] - sectionRows[s];
+      if (i + 1 === sectionBottom[s] && rect.top <= firstRowOfSection) {
+        removeSection(tr, rect, s);
+        i = firstRowOfSection;
+        s--;
+      } else {
+        removeRow(tr, rect, i);
+      }
+      if (i <= rect.top) break;
       const table = rect.tableStart
         ? tr.doc.nodeAt(rect.tableStart - 1)
         : tr.doc;

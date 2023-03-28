@@ -9,6 +9,7 @@
 // compute the start position of the table and offset positions passed
 // to or gotten from this structure by that amount.
 import { Attrs, Node } from 'prosemirror-model';
+import { isTableSection } from './schema';
 import { CellAttrs, getRow, rowPos } from './util';
 
 /**
@@ -225,26 +226,16 @@ export class TableMap {
   // Return the position at which the cell at the given row and column
   // starts, or would start, if a cell started there.
   positionAt(row: number, col: number, table: Node): number {
-    if (col >= this.width) {
-      const { node, pos } = getRow(table, row);
-      // if (!node)
-      //   console.log(
-      //     `positionAt(row=${row},col=${col}) in table ${this.height}x${this.width}`,
-      //   );
-      return pos + node!.nodeSize - 1;
-    } else {
-      const { map, width } = this;
-      let cellPos = map[row * width + col];
-      const rPos = rowPos(table, row);
-      if (cellPos > rPos) return cellPos;
-      let c = col;
-      while (cellPos < rPos && c > 0) {
-        c--;
-        cellPos = map[row * width + c];
+    for (let i = 0; ; i++) {
+      const { node, pos: rowStart } = getRow(table, row);
+      const rowEnd = rowStart + node!.nodeSize;
+      if (i == row) {
+        let index = col + row * this.width;
+        const rowEndIndex = (row + 1) * this.width;
+        // Skip past cells from previous rows (via rowspan)
+        while (index < rowEndIndex && this.map[index] < rowStart) index++;
+        return index == rowEndIndex ? rowEnd - 1 : this.map[index];
       }
-      return cellPos > rPos
-        ? cellPos + table.nodeAt(cellPos)!.nodeSize
-        : rPos + 1;
     }
   }
 
@@ -303,7 +294,7 @@ function computeMap(table: Node): TableMap {
   let colWidths: ColWidths = [];
   for (let c = 0; c < table.childCount; c++) {
     const section = table.child(c);
-    if (section.type.spec.tableRole === 'table_section') {
+    if (isTableSection(section)) {
       tmap.sectionRows.push(section.childCount);
       let smap = computeSectionMap(section, width, offset + 1, colWidths);
       tmap.map = tmap.map.concat(smap.map);
@@ -332,7 +323,7 @@ function computeSectionMap(
   offset: number,
   colWidths: ColWidths,
 ): TableMap {
-  if (section.type.spec.tableRole != 'table_section')
+  if (!isTableSection(section))
     throw new RangeError('Not a table section node: ' + section.type.name);
   const height = section.childCount;
   const map = [];
@@ -400,8 +391,7 @@ function computeSectionMap(
 export function recomputeMapSectionRows(map: TableMap, table: Node): void {
   for (let c = 0; c < table.childCount; c++) {
     const section = table.child(c);
-    if (section.type.spec.tableRole === 'table_section')
-      map.sectionRows.push(section.childCount);
+    if (isTableSection(section)) map.sectionRows.push(section.childCount);
   }
 }
 
@@ -410,7 +400,7 @@ function findWidth(table: Node): number {
   let hasRowSpan = false;
   for (let cIndex = 0; cIndex < table.childCount; cIndex++) {
     const sectionNode = table.child(cIndex);
-    if (sectionNode.type.spec.tableRole === 'table_section') {
+    if (isTableSection(sectionNode)) {
       for (let row = 0; row < sectionNode.childCount; row++) {
         const rowNode = sectionNode.child(row);
         let rowWidth = 0;
@@ -439,7 +429,7 @@ function findHeight(table: Node): number {
   let height = 0;
   for (let cIndex = 0; cIndex < table.childCount; cIndex++) {
     const sectionNode = table.child(cIndex);
-    if (sectionNode.type.spec.tableRole === 'table_section') {
+    if (isTableSection(sectionNode)) {
       height += sectionNode.childCount;
     }
   }

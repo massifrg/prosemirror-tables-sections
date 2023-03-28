@@ -4,7 +4,7 @@ import { EditorState, NodeSelection, PluginKey } from 'prosemirror-state';
 
 import { Attrs, Node, ResolvedPos } from 'prosemirror-model';
 import { CellSelection } from './cellselection';
-import { tableNodeTypes } from './schema';
+import { isTableSection, tableNodeTypes } from './schema';
 import { Rect, TableMap } from './tablemap';
 
 /**
@@ -201,7 +201,7 @@ export function rowsCount(table: Node) {
   let count = 0;
   for (let c = 0; c < table.childCount; c++) {
     const section = table.child(c);
-    if (section.type.spec.tableRole === 'table_section')
+    if (isTableSection(section))
       count += section.childCount;
   }
   return count;
@@ -215,13 +215,14 @@ export function getRow(
   row: number,
   offset: number = 0,
   // debug: boolean = false,
-): { node: Node | null; pos: number } {
+): { node: Node | null; pos: number; section: number } {
   let rPos = offset;
   let prevSectionsRows = 0;
-  let rNode: Node | null = null;
-  for (let s = 0; s < table.childCount; s++) {
-    const section = table.child(s);
-    if (section.type.spec.tableRole === 'table_section') {
+  let sectionIndex = -1
+  for (let tc = 0; tc < table.childCount; tc++) {
+    const section = table.child(tc);
+    if (isTableSection(section)) {
+      sectionIndex++;
       const sectionRows = section.childCount;
       if (sectionRows > 0) {
         // if (debug)
@@ -229,10 +230,11 @@ export function getRow(
         //     `looking for row ${row} in section ${s}: ${section.type.name} with ${sectionRows} rows; prevSectionRows=${prevSectionsRows}`,
         //   );
         if (prevSectionsRows + sectionRows <= row) {
-          if (s === table.childCount - 1) {
+          if (tc === table.childCount - 1) {
             return {
               node: null,
               pos: rPos + section.nodeSize - 1,
+              section: sectionIndex
             };
           }
           rPos += section.nodeSize;
@@ -251,6 +253,7 @@ export function getRow(
           return {
             node: r >= sectionRows ? null : section.child(r),
             pos: rPos,
+            section: sectionIndex
           };
         }
       }
@@ -259,7 +262,7 @@ export function getRow(
       rPos += section.nodeSize;
     }
   }
-  return { node: rNode, pos: rPos };
+  return { node: null, pos: rPos, section: sectionIndex };
 }
 
 /**
@@ -282,7 +285,7 @@ export function rowAtPos(table: Node, pos: number): number {
   let row = 0;
   for (let c = 0; c < table.childCount; c++) {
     const section = table.child(c);
-    if (section.type.spec.tableRole === 'table_section') {
+    if (isTableSection(section)) {
       rpos++;
       for (let r = 0; r < section.childCount; r++) {
         rpos += section.child(r).nodeSize;

@@ -50,17 +50,18 @@ function test(
   command: Command,
   expected_result: Node | null | undefined,
   debug = false,
+  verbose = false,
 ) {
   let state = EditorState.create({ doc, selection: selectionFor(doc) });
-  if (debug) logNode(state.doc);
-  console.log()
+  if (debug) logNode(state.doc, 'BEFORE:', !verbose);
+  console.log();
   const ran = command(state, (tr) => (state = state.apply(tr)));
   if (expected_result == null) ist(ran, false);
   else {
     if (debug) {
-      logNode(state.doc, 'RESULT:')
-      console.log()
-      logNode(expected_result, 'EXPECTED:')
+      logNode(state.doc, 'RESULT:', !verbose);
+      console.log();
+      logNode(expected_result, 'EXPECTED:', !verbose);
     }
     ist(state.doc, expected_result, eq);
   }
@@ -89,18 +90,18 @@ describe('addColumnAfter', () => {
   it('can add a column at the right of the table', () =>
     test(
       table(
-        caption(p("x")),
+        caption(p('x')),
         thead(tr(c11, c11, c11)),
-        tbody(tr(c11, c11, c11), tr(c11, c(2,1)), tr(c11, c11, cCursor)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, cCursor)),
         tfoot(tr(c11, c11, c11)),
       ),
       addColumnAfter,
       table(
-        caption(p("x")),
+        caption(p('x')),
         thead(tr(c11, c11, c11, cEmpty)),
         tbody(
           tr(c11, c11, c11, cEmpty),
-          tr(c11, c(2,1), cEmpty),
+          tr(c11, c(2, 1), cEmpty),
           tr(c11, c11, c11, cEmpty),
         ),
         tfoot(tr(c11, c11, c11, cEmpty)),
@@ -544,7 +545,79 @@ describe('deleteRow', () => {
       deleteRow,
       table(tbody(tr(c11, cEmpty), tr(cEmpty, c11))),
     ));
-});
+
+  it('can delete rows across sections', () =>
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(c(3, 1))),
+        tbody(tr(cEmpty, c11, c11), tr(c11, cAnchor, c11)),
+        tbody(tr(c11, cHead, td(p('para1'))), tr(td(p('para2')), c11, cEmpty)),
+        tfoot(tr(c11, c11, c11)),
+      ),
+      deleteRow,
+      table(
+        caption(p('caption')),
+        thead(tr(c(3, 1))),
+        tbody(tr(cEmpty, c11, c11)),
+        tbody(tr(td(p('para2')), c11, cEmpty)),
+        tfoot(tr(c11, c11, c11)),
+      ),
+    ));
+
+  it('deletes a section when all its rows are deleted', () =>
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(c(3, 1))),
+        tbody(tr(cAnchor, c11, c11), tr(c11, cHead, c11)),
+        tbody(tr(c11, cEmpty, td(p('para1'))), tr(td(p('para2')), c11, cEmpty)),
+        tfoot(tr(c11, c11, c11)),
+      ),
+      deleteRow,
+      table(
+        caption(p('caption')),
+        thead(tr(c(3, 1))),
+        tbody(tr(c11, cEmpty, td(p('para1'))), tr(td(p('para2')), c11, cEmpty)),
+        tfoot(tr(c11, c11, c11)),
+      ),
+    ));
+
+    it('correctly deletes a row in a section, then a complete section and then another row in another section', () =>
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(c(3, 1))),
+        tbody(tr(c11, c11, td(p('para1'))), tr(c11, cAnchor, c11)),
+        tbody(tr(c11, cEmpty, td(p('para1'))), tr(td(p('para2')), c11, cEmpty)),
+        tfoot(tr(c11, cHead, c11), tr(c11, c(2,1))),
+      ),
+      deleteRow,
+      table(
+        caption(p('caption')),
+        thead(tr(c(3, 1))),
+        tbody(tr(c11, c11, td(p('para1')))),
+        tfoot(tr(c11, c(2,1))),
+      ),
+    ));
+
+    it('correctly deletes a row in a section and then all the sections until the end of a table', () =>
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(c(3, 1))),
+        tbody(tr(c11, c11, td(p('para1'))), tr(c11, cAnchor, c11)),
+        tbody(tr(c11, cEmpty, td(p('para1'))), tr(td(p('para2')), c11, cEmpty)),
+        tfoot(tr(c11, c11, c11), tr(cHead, c(2,1))),
+      ),
+      deleteRow,
+      table(
+        caption(p('caption')),
+        thead(tr(c(3, 1))),
+        tbody(tr(c11, c11, td(p('para1')))),
+      ),
+    ));
+  });
 
 describe('mergeCells', () => {
   it("doesn't do anything when only one cell is selected", () =>

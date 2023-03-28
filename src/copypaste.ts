@@ -15,7 +15,7 @@ import { Transform } from 'prosemirror-transform';
 
 import { EditorState, Transaction } from 'prosemirror-state';
 import { CellSelection } from './cellselection';
-import { tableNodeTypes } from './schema';
+import { isTableSection, tableNodeTypes } from './schema';
 import { ColWidths, Rect, TableMap } from './tablemap';
 import { CellAttrs, getRow, removeColSpan } from './util';
 
@@ -51,7 +51,7 @@ export function pastedCells(slice: Slice): Area | null {
   if (role == 'table_section') {
     for (let s = 0; s < content.childCount; s++) {
       const section = content.child(s);
-      if (section.type.spec.tableRole === 'table_section') {
+      if (isTableSection(section)) {
         for (let i = 0; i < section.childCount; i++) {
           let cells = section.child(i).content;
           const left = i != 0 ? 0 : Math.max(0, openStart - 1);

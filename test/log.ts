@@ -17,10 +17,19 @@ export function logNode(
         .tableRole;
       if (role === 'cell' || role === 'header_cell') {
         console.log(
-          `${n.type.name}(${n.attrs.colspan},${n.attrs.rowspan}) @ ${p}, size: ${n.nodeSize}, colwidth=${n.attrs.colwidth || 'auto'}`,
+          `${n.type.name}(${n.attrs.colspan},${
+            n.attrs.rowspan
+          }) @ ${p}, size: ${n.nodeSize}, colwidth=${
+            n.attrs.colwidth || 'auto'
+          }`,
         );
       } else {
-        console.log(`${n.type.name} @ ${p}, size: ${n.nodeSize}`);
+        const text = n.type.name === 'text' ? n.textContent : undefined;
+        console.log(
+          `${n.type.name} @ ${p}, size: ${n.nodeSize}${
+            text ? ' "' + text + '"' : ''
+          }`,
+        );
       }
     }
     return true;

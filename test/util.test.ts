@@ -6,7 +6,7 @@ import { c11, caption, p, table, tbody, tfoot, thead, tr } from './build';
 
 describe('getRow', () => {
   const t = table(
-    caption(p("x")),
+    caption(p('x')),
     thead(tr(c11, c11, c11)),
     tbody(
       tr(c11, c11, c11),
@@ -26,6 +26,16 @@ describe('getRow', () => {
     ist(getRow(t, 3).pos, 59);
     ist(getRow(t, 4).pos, 76);
     ist(getRow(t, 5).pos, 95);
-    ist(TableMap.get(t).sectionRows.join(', '), '1, 4, 1')
+    ist(TableMap.get(t).sectionRows.join(', '), '1, 4, 1');
+  });
+
+  it("correctly determine section's index", () => {
+    ist(getRow(t, 0).section, 0);
+    ist(getRow(t, 1).section, 1);
+    ist(getRow(t, 2).section, 1);
+    ist(getRow(t, 3).section, 1);
+    ist(getRow(t, 4).section, 1);
+    ist(getRow(t, 5).section, 2);
+    ist(getRow(t, 6).section, 2);
   });
 });

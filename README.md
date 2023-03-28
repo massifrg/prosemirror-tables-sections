@@ -35,7 +35,9 @@ module can be used.
 
 ## Current state
 
-This module is still experimental.
+**BEWARE**: this module is still experimental and buggy.
+
+`removeRow` does not work properly in the demo, even though all tests pass.
 
 Currently it lacks the commands to create a caption or new sections (head, body, foot).
 
