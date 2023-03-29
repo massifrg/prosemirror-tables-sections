@@ -304,7 +304,7 @@ export function removeRow(
   { map, table, tableStart }: TableRect,
   row: number,
 ): void {
-  const { node: rNode, pos: rPos } = getRow(table, row, tableStart);
+  const { node: rNode, pos: rPos } = getRow(table, row);
 
   const mapFrom = tr.mapping.maps.length;
   const from = rPos + tableStart;
