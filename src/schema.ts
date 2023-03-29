@@ -120,8 +120,9 @@ export type TableNodes = Record<
 /**
  * This function creates a set of [node
  * specs](http://prosemirror.net/docs/ref/#model.SchemaSpec.nodes) for
- * `table`, `table_caption`, `table_section`, `table_row`, and `table_cell` 
- * nodes types  as used by this module. 
+ * `table`, `table_caption`, `table_head`, `table_body`, `table_foot`,
+ * `table_row`, `table_cell` and `table_header` nodes types as used 
+ * by this module.
  * The result can then be added to the set of nodes when
  * creating a schema.
  *
@@ -134,9 +135,6 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
     rowspan: { default: 1 },
     colwidth: { default: null },
   };
-  // const tableAttrs: Record<string, AttributeSpec> = {
-  //   colwidths: { default: [] },
-  // };
 
   for (const prop in extraAttrs)
     cellAttrs[prop] = { default: extraAttrs[prop].default };
@@ -152,12 +150,12 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
       parseDOM: [{ tag: 'table' }],
       toDOM() {
         // return ['table', ['tbody', 0]];
-        return ['table', 0]
+        return ['table', 0];
       },
     },
     table_caption: {
       content: 'block+',
-      tableRole: 'table_caption',
+      tableRole: 'caption',
       isolating: true,
       parseDOM: [{ tag: 'caption' }],
       toDOM() {
@@ -166,7 +164,7 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
     },
     table_head: {
       content: 'table_row+',
-      tableRole: 'table_section',
+      tableRole: 'head',
       isolating: true,
       parseDOM: [{ tag: 'thead' }],
       toDOM() {
@@ -175,7 +173,7 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
     },
     table_foot: {
       content: 'table_row+',
-      tableRole: 'table_section',
+      tableRole: 'foot',
       isolating: true,
       parseDOM: [{ tag: 'tfoot' }],
       toDOM() {
@@ -184,7 +182,7 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
     },
     table_body: {
       content: 'table_row+',
-      tableRole: 'table_section',
+      tableRole: 'body',
       isolating: true,
       parseDOM: [{ tag: 'tbody' }],
       toDOM() {
@@ -232,7 +230,9 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
 export type TableRole =
   | 'table'
   | 'caption'
-  | 'table_section'
+  | 'head'
+  | 'body'
+  | 'foot'
   | 'row'
   | 'cell'
   | 'header_cell';
@@ -254,5 +254,10 @@ export function tableNodeTypes(schema: Schema): Record<TableRole, NodeType> {
 }
 
 export function isTableSection(node: Node): boolean {
-  return node.type.spec.tableRole === 'table_section'
+  const role = node.type.spec.tableRole;
+  return role === 'body' || role === 'head' || role === 'foot';
+}
+
+export function isTableSectionRole(role: string): boolean {
+  return role === 'body' || role === 'head' || role === 'foot';
 }

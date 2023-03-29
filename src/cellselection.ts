@@ -18,6 +18,7 @@ import { Mappable } from 'prosemirror-transform';
 import { getRow, rowAtPos, rowsCount } from './util';
 import { TableMap } from './tablemap';
 import { CellAttrs, inSameTable, pointsAtCell, removeColSpan } from './util';
+import { isTableSectionRole } from './schema';
 
 /**
  * @public
@@ -443,7 +444,7 @@ function isCellBoundarySelection({ $from, $to }: TextSelection) {
     if ($to.before(d + 1) > $to.start(d)) break;
   return (
     afterFrom == beforeTo &&
-    /^(row|table|table_section)$/.test($from.node(depth).type.spec.tableRole)
+    /^(row|body|table|head|foot)$/.test($from.node(depth).type.spec.tableRole)
   );
 }
 
@@ -493,7 +494,7 @@ export function normalizeSelection(
       // console.log(`normalizeSelection: ROW selection`);
       const $cell = doc.resolve(sel.from + 1);
       normalize = CellSelection.rowSelection($cell, $cell);
-    } else if (role == 'table_section') {
+    } else if (isTableSectionRole(role)) {
       // console.log(`normalizeSelection: SECTION selection`);
       const $cell = doc.resolve(sel.from + 2);
       normalize = CellSelection.sectionSelection($cell, $cell);
