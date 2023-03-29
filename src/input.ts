@@ -67,24 +67,37 @@ function tabulation(dir: Direction): Command {
     if (!view) return false;
     const sel = state.selection;
     const r = state.doc.resolve(sel.head);
-    let d= r.depth
+    let d = r.depth;
+    let inCaption = false;
     for (; d > 0; d--) {
-      if (r.node(d).type.spec.tableRole === 'row') break;
+      const role = r.node(d).type.spec.tableRole;
+      if (role === 'row') break;
+      if (role === 'caption' && dir > 0) {
+        inCaption = true;
+        break;
+      }
     }
-    const table = r.node(d - 2);
+    const tableDepth = d - (inCaption ? 1 : 2);
+    const table = r.node(tableDepth);
+    if (!table || table.type.spec.tableRole != 'table') return false;
+    const tableStart = r.start(tableDepth);
     const tmap = TableMap.get(table);
-    const tableStart = r.start(d - 2);
-    const cellStart = r.start(d + 1);
-    const cellPos = cellStart - tableStart - 1;
-    const map = tmap.map;
-    let i;
-    for (i = dir < 0 ? 0 : map.length - 1; i >= 0 && i < map.length; i -= dir) {
-      if (cellPos == map[i]) break;
+    let nextCellPos
+    if (inCaption) {
+      nextCellPos = tmap.map[0]
+    } else {
+      const map = tmap.map;
+      const cellStart = inCaption ? tmap.positionAt(0, 0, table) : r.start(d + 1);
+      const cellPos = cellStart - tableStart - 1;
+      let i;
+      for (i = dir < 0 ? 0 : map.length - 1; i >= 0 && i < map.length; i -= dir) {
+        if (cellPos == map[i]) break;
+      }
+      if (i < 0 || i >= map.length) return false;
+      i += dir;
+      if (i < 0 || i >= map.length) return false;
+      nextCellPos = map[i];
     }
-    if (i < 0 || i >= map.length) return false;
-    i += dir;
-    if (i < 0 || i >= map.length) return false;
-    const nextCellPos = map[i];
     if (nextCellPos) {
       const cell = table.nodeAt(nextCellPos);
       if (!cell) return false;
