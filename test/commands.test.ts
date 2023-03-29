@@ -583,32 +583,32 @@ describe('deleteRow', () => {
       ),
     ));
 
-    it('correctly deletes a row in a section, then a complete section and then another row in another section', () =>
+  it('correctly deletes a row in a section, then a complete section and then another row in another section', () =>
     test(
       table(
         caption(p('caption')),
         thead(tr(c(3, 1))),
         tbody(tr(c11, c11, td(p('para1'))), tr(c11, cAnchor, c11)),
         tbody(tr(c11, cEmpty, td(p('para1'))), tr(td(p('para2')), c11, cEmpty)),
-        tfoot(tr(c11, cHead, c11), tr(c11, c(2,1))),
+        tfoot(tr(c11, cHead, c11), tr(c11, c(2, 1))),
       ),
       deleteRow,
       table(
         caption(p('caption')),
         thead(tr(c(3, 1))),
         tbody(tr(c11, c11, td(p('para1')))),
-        tfoot(tr(c11, c(2,1))),
+        tfoot(tr(c11, c(2, 1))),
       ),
     ));
 
-    it('correctly deletes a row in a section and then all the sections until the end of a table', () =>
+  it('correctly deletes a row in a section and then all the sections until the end of a table', () =>
     test(
       table(
         caption(p('caption')),
         thead(tr(c(3, 1))),
         tbody(tr(c11, c11, td(p('para1'))), tr(c11, cAnchor, c11)),
         tbody(tr(c11, cEmpty, td(p('para1'))), tr(td(p('para2')), c11, cEmpty)),
-        tfoot(tr(c11, c11, c11), tr(cHead, c(2,1))),
+        tfoot(tr(c11, c11, c11), tr(cHead, c(2, 1))),
       ),
       deleteRow,
       table(
@@ -617,7 +617,7 @@ describe('deleteRow', () => {
         tbody(tr(c11, c11, td(p('para1')))),
       ),
     ));
-  });
+});
 
 describe('mergeCells', () => {
   it("doesn't do anything when only one cell is selected", () =>

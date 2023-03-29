@@ -198,10 +198,10 @@ describe('insertCells', () => {
     }
 
     const map = TableMap.get(table);
-    const pasted = pastedCells(cells.slice(cells.tag.a, cells.tag.b))!
+    const pasted = pastedCells(cells.slice(cells.tag.a, cells.tag.b))!;
     if (log) {
-      console.log(pasted)
-      console.log()
+      console.log(pasted);
+      console.log();
     }
     insertCells(
       state,

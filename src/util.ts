@@ -201,8 +201,7 @@ export function rowsCount(table: Node) {
   let count = 0;
   for (let c = 0; c < table.childCount; c++) {
     const section = table.child(c);
-    if (isTableSection(section))
-      count += section.childCount;
+    if (isTableSection(section)) count += section.childCount;
   }
   return count;
 }
@@ -218,7 +217,7 @@ export function getRow(
 ): { node: Node | null; pos: number; section: number } {
   let rPos = offset;
   let prevSectionsRows = 0;
-  let sectionIndex = -1
+  let sectionIndex = -1;
   for (let tc = 0; tc < table.childCount; tc++) {
     const section = table.child(tc);
     if (isTableSection(section)) {
@@ -234,7 +233,7 @@ export function getRow(
             return {
               node: null,
               pos: rPos + section.nodeSize - 1,
-              section: sectionIndex
+              section: sectionIndex,
             };
           }
           rPos += section.nodeSize;
@@ -253,7 +252,7 @@ export function getRow(
           return {
             node: r >= sectionRows ? null : section.child(r),
             pos: rPos,
-            section: sectionIndex
+            section: sectionIndex,
           };
         }
       }

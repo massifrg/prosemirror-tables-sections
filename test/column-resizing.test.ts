@@ -10,7 +10,7 @@ describe('handleDecorations', () => {
       doc: doc(table(tbody(tr(/* 2*/ cEmpty, /* 6*/ cEmpty, /*10*/ cEmpty)))),
     });
     // @ts-expect-error: null is not a valid number
-    const decos = handleDecorations(state, null)
+    const decos = handleDecorations(state, null);
     ist(decos instanceof Array && decos.length === 0);
   });
 });

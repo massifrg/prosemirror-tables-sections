@@ -82,15 +82,21 @@ function tabulation(dir: Direction): Command {
     if (!table || table.type.spec.tableRole != 'table') return false;
     const tableStart = r.start(tableDepth);
     const tmap = TableMap.get(table);
-    let nextCellPos
+    let nextCellPos;
     if (inCaption) {
-      nextCellPos = tmap.map[0]
+      nextCellPos = tmap.map[0];
     } else {
       const map = tmap.map;
-      const cellStart = inCaption ? tmap.positionAt(0, 0, table) : r.start(d + 1);
+      const cellStart = inCaption
+        ? tmap.positionAt(0, 0, table)
+        : r.start(d + 1);
       const cellPos = cellStart - tableStart - 1;
       let i;
-      for (i = dir < 0 ? 0 : map.length - 1; i >= 0 && i < map.length; i -= dir) {
+      for (
+        i = dir < 0 ? 0 : map.length - 1;
+        i >= 0 && i < map.length;
+        i -= dir
+      ) {
         if (cellPos == map[i]) break;
       }
       if (i < 0 || i >= map.length) return false;

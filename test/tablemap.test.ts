@@ -72,7 +72,7 @@ describe('TableMap', () => {
     table(
       thead(tr(c11, c(3, 1))),
       tbody(tr(c(2, 3), c11, c(1, 2)), tr(c11), tr(c(2, 1))),
-      tfoot(tr(c(1, 2), c11, c(2,1)), tr(c(2, 1), c11)),
+      tfoot(tr(c(1, 2), c11, c(2, 1)), tr(c(2, 1), c11)),
     ),
   );
   /*
@@ -94,26 +94,80 @@ describe('TableMap', () => {
   it('can accurately find cell sizes', () => {
     ist(map.width, 4);
     ist(map.height, 6);
-    ist(map.findCell(2), { left: 0, right: 1, top: 0, bottom: 1 }, eqRect); /* H11 */
-    ist(map.findCell(7), { left: 1, right: 4, top: 0, bottom: 1 }, eqRect); /* H12 */
-    ist(map.findCell(16), { left: 0, right: 2, top: 1, bottom: 4 }, eqRect); /* B11 */
-    ist(map.findCell(21), { left: 2, right: 3, top: 1, bottom: 2 }, eqRect); /* B12 */
-    ist(map.findCell(26), { left: 3, right: 4, top: 1, bottom: 3 }, eqRect); /* B13 */
-    ist(map.findCell(33), { left: 2, right: 3, top: 2, bottom: 3 }, eqRect); /* B21 */
-    ist(map.findCell(40), { left: 2, right: 4, top: 3, bottom: 4 }, eqRect); /* B31 */
-    ist(map.findCell(49), { left: 0, right: 1, top: 4, bottom: 6 }, eqRect); /* F11 */
-    ist(map.findCell(54), { left: 1, right: 2, top: 4, bottom: 5 }, eqRect); /* F12 */
-    ist(map.findCell(59), { left: 2, right: 4, top: 4, bottom: 5 }, eqRect); /* F13 */
-    ist(map.findCell(66), { left: 1, right: 3, top: 5, bottom: 6 }, eqRect); /* F21 */
-    ist(map.findCell(71), { left: 3, right: 4, top: 5, bottom: 6 }, eqRect); /* F22 */
+    ist(
+      map.findCell(2),
+      { left: 0, right: 1, top: 0, bottom: 1 },
+      eqRect,
+    ); /* H11 */
+    ist(
+      map.findCell(7),
+      { left: 1, right: 4, top: 0, bottom: 1 },
+      eqRect,
+    ); /* H12 */
+    ist(
+      map.findCell(16),
+      { left: 0, right: 2, top: 1, bottom: 4 },
+      eqRect,
+    ); /* B11 */
+    ist(
+      map.findCell(21),
+      { left: 2, right: 3, top: 1, bottom: 2 },
+      eqRect,
+    ); /* B12 */
+    ist(
+      map.findCell(26),
+      { left: 3, right: 4, top: 1, bottom: 3 },
+      eqRect,
+    ); /* B13 */
+    ist(
+      map.findCell(33),
+      { left: 2, right: 3, top: 2, bottom: 3 },
+      eqRect,
+    ); /* B21 */
+    ist(
+      map.findCell(40),
+      { left: 2, right: 4, top: 3, bottom: 4 },
+      eqRect,
+    ); /* B31 */
+    ist(
+      map.findCell(49),
+      { left: 0, right: 1, top: 4, bottom: 6 },
+      eqRect,
+    ); /* F11 */
+    ist(
+      map.findCell(54),
+      { left: 1, right: 2, top: 4, bottom: 5 },
+      eqRect,
+    ); /* F12 */
+    ist(
+      map.findCell(59),
+      { left: 2, right: 4, top: 4, bottom: 5 },
+      eqRect,
+    ); /* F13 */
+    ist(
+      map.findCell(66),
+      { left: 1, right: 3, top: 5, bottom: 6 },
+      eqRect,
+    ); /* F21 */
+    ist(
+      map.findCell(71),
+      { left: 3, right: 4, top: 5, bottom: 6 },
+      eqRect,
+    ); /* F22 */
   });
 
   it('can find the rectangle between two cells', () => {
     ist(map.cellsInRect(map.rectBetween(2, 2)).join(', '), '2');
     ist(map.cellsInRect(map.rectBetween(2, 16)).join(', '), '2, 7, 16');
-    ist(map.cellsInRect(map.rectBetween(7, 16)).join(', '), '2, 7, 16, 21, 26, 33, 40');
+    ist(
+      map.cellsInRect(map.rectBetween(7, 16)).join(', '),
+      '2, 7, 16, 21, 26, 33, 40',
+    );
     ist(map.cellsInRect(map.rectBetween(16, 21)).join(', '), '16, 21, 33, 40');
-    ist(map.cellsInRect(map.rectBetween(16, 40)).join(', '), '16, 21, 26, 33, 40');
+    ist(
+      map.cellsInRect(map.rectBetween(16, 40)).join(', '),
+      '16, 21, 26, 33, 40',
+    );
     ist(map.cellsInRect(map.rectBetween(16, 16)).join(', '), '16');
     ist(map.cellsInRect(map.rectBetween(21, 40)).join(', '), '21, 26, 33, 40');
     ist(map.cellsInRect(map.rectBetween(21, 26)).join(', '), '21, 26, 33');

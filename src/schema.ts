@@ -121,7 +121,7 @@ export type TableNodes = Record<
  * This function creates a set of [node
  * specs](http://prosemirror.net/docs/ref/#model.SchemaSpec.nodes) for
  * `table`, `table_caption`, `table_head`, `table_body`, `table_foot`,
- * `table_row`, `table_cell` and `table_header` nodes types as used 
+ * `table_row`, `table_cell` and `table_header` nodes types as used
  * by this module.
  * The result can then be added to the set of nodes when
  * creating a schema.
