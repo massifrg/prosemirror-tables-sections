@@ -141,15 +141,12 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
 
   return {
     table: {
-      // content: 'table_row+',
-      content: 'table_caption? table_head? table_body+ table_foot?',
+      content: 'table_caption? table_head? table_body* table_foot?',
       tableRole: 'table',
       isolating: true,
       group: options.tableGroup,
-      // attrs: tableAttrs,
       parseDOM: [{ tag: 'table' }],
       toDOM() {
-        // return ['table', ['tbody', 0]];
         return ['table', 0];
       },
     },
