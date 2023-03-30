@@ -58,6 +58,15 @@ export function isInTable(state: EditorState): boolean {
 /**
  * @internal
  */
+export function tableDepth($pos: ResolvedPos): number {
+  for (let d = $pos.depth; d > 0; d--)
+    if ($pos.node(d).type.spec.tableRole == 'table') return d;
+  return -1;
+}
+
+/**
+ * @internal
+ */
 export function selectionCell(state: EditorState): ResolvedPos {
   const sel = state.selection as CellSelection | NodeSelection;
   if ('$anchorCell' in sel && sel.$anchorCell) {
@@ -297,4 +306,12 @@ export function rowAtPos(table: Node, pos: number): number {
     }
   }
   return row;
+}
+
+// checks whether the table has a caption node
+export function tableHasCaption(table: Node): boolean {
+  if (table && table.type.spec.tableRole === 'table') {
+    return table.child(0).type.spec.tableRole === 'caption';
+  }
+  return false;
 }

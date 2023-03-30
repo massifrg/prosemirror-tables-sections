@@ -1,7 +1,11 @@
 // This file defines a number of helpers for wiring up user input to
 // table-related functionality.
 
-import { Fragment, ResolvedPos, Slice } from 'prosemirror-model';
+import {
+  Fragment,
+  ResolvedPos,
+  Slice,
+} from 'prosemirror-model';
 import {
   Command,
   EditorState,
@@ -18,6 +22,8 @@ import {
   tableEditingKey,
   nextCell,
   selectionCell,
+  tableDepth,
+  tableHasCaption,
 } from './util';
 import { CellSelection } from './cellselection';
 import { TableMap } from './tablemap';
@@ -132,8 +138,7 @@ function arrow(axis: Axis, dir: Direction): Command {
       );
     }
     if (axis != 'horiz' && !sel.empty) return false;
-    const end = atEndOfCell(view, axis, dir);
-    if (end == null) return false;
+    const end = atEndOfCell(view, axis, dir, true); // the last parameter is to check also caption
     if (axis == 'horiz') {
       return maybeSetSelection(
         state,
@@ -141,14 +146,52 @@ function arrow(axis: Axis, dir: Direction): Command {
         Selection.near(state.doc.resolve(sel.head + dir), dir),
       );
     } else {
-      const $cell = state.doc.resolve(end);
-      const $next = nextCell($cell, axis, dir);
       let newSel;
-      if ($next) newSel = Selection.near($next, 1);
-      else if (dir < 0)
-        newSel = Selection.near(state.doc.resolve($cell.before(-2)), -1);
-      else newSel = Selection.near(state.doc.resolve($cell.after(-2)), 1);
-      return maybeSetSelection(state, dispatch, newSel);
+      if (end) {
+        const $cell = state.doc.resolve(end);
+        if ($cell.node().type.spec.tableRole === 'row') {
+          // cursor is in cell
+          const $next = nextCell($cell, axis, dir);
+          if ($next) newSel = Selection.near($next, 1);
+          else if (dir < 0) {
+            const table = $cell.node(-2);
+            if (tableHasCaption(table))
+              newSel = Selection.near(state.doc.resolve($cell.start(-2)), 1);
+            else
+              newSel = Selection.near(state.doc.resolve($cell.before(-2)), -1);
+          } else newSel = Selection.near(state.doc.resolve($cell.after(-2)), 1);
+        } else {
+          // cursor is in caption
+          if (dir < 0) {
+            newSel = Selection.near(state.doc.resolve($cell.before()), -1);
+          } else {
+            const table = $cell.node();
+            const map = TableMap.get(table);
+            const pos = $cell.start() + map.positionAt(0, 0, table);
+            newSel = Selection.near(state.doc.resolve(pos), 1);
+          }
+        }
+      } else {
+        // check whether we are entering the table
+        if (dir > 0) {
+          const pos = sel.$anchor.after();
+          const table = state.doc.nodeAt(pos);
+          if (table && table.type.spec.tableRole === 'table')
+            newSel = Selection.near(state.doc.resolve(pos), 1);
+        } else {
+          newSel = Selection.near(state.doc.resolve(sel.$anchor.before()), -1);
+          const d = tableDepth(newSel.$anchor);
+          if (d > 0) {
+            const table = newSel.$anchor.node(d);
+            const map = TableMap.get(table);
+            const pos =
+              newSel.$anchor.start(d) +
+              map.positionAt(map.height - 1, 0, table);
+            newSel = Selection.near(state.doc.resolve(pos), 1);
+          }
+        }
+      }
+      return newSel ? maybeSetSelection(state, dispatch, newSel) : false;
     }
   };
 }
@@ -329,16 +372,24 @@ export function handleMouseDown(
 
 // Check whether the cursor is at the end of a cell (so that further
 // motion would move out of the cell)
-function atEndOfCell(view: EditorView, axis: Axis, dir: number): null | number {
+function atEndOfCell(
+  view: EditorView,
+  axis: Axis,
+  dir: number,
+  checkCaption: boolean = false,
+): null | number {
   if (!(view.state.selection instanceof TextSelection)) return null;
   const { $head } = view.state.selection;
   for (let d = $head.depth - 1; d >= 0; d--) {
     const parent = $head.node(d),
       index = dir < 0 ? $head.index(d) : $head.indexAfter(d);
     if (index != (dir < 0 ? 0 : parent.childCount)) return null;
+    const alsoInCaption =
+      checkCaption && parent.type.spec.tableRole == 'caption';
     if (
       parent.type.spec.tableRole == 'cell' ||
-      parent.type.spec.tableRole == 'header_cell'
+      parent.type.spec.tableRole == 'header_cell' ||
+      alsoInCaption
     ) {
       const cellPos = $head.before(d);
       const dirStr: 'up' | 'down' | 'left' | 'right' =
