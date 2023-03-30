@@ -165,4 +165,31 @@ describe('fixTable', () => {
       eq,
     );
   });
+
+  it('free rows (direct children of table) are enclosed in a table body', () => {
+    ist(
+      fix(table(tr(c11, c11, c11), tr(c11, c11, c11))),
+      table(tbody(tr(c11, c11, c11), tr(c11, c11, c11))),
+      eq,
+    );
+  });
+
+  it('adjacent free rows mixed with sections are enclosed in table bodies', () => {
+    ist(
+      fix(
+        table(
+          tr(c11, c11, c11),
+          tr(c11, c11, c11),
+          tbody(tr(c11, c11, c11)),
+          tr(cEmpty, cEmpty, cEmpty),
+        ),
+      ),
+      table(
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11)),
+        tbody(tr(cEmpty, cEmpty, cEmpty)),
+      ),
+      eq,
+    );
+  });
 });

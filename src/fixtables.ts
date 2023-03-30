@@ -4,7 +4,12 @@
 // reported by `TableMap`.
 
 import { Node } from 'prosemirror-model';
-import { EditorState, PluginKey, Transaction } from 'prosemirror-state';
+import {
+  EditorState,
+  NodeSelection,
+  PluginKey,
+  Transaction,
+} from 'prosemirror-state';
 import { tableNodeTypes, TableRole } from './schema';
 import { TableMap } from './tablemap';
 import { CellAttrs, getRow, removeColSpan } from './util';
@@ -78,6 +83,7 @@ export function fixTable(
   tablePos: number,
   tr: Transaction | undefined,
 ): Transaction | undefined {
+  if (hasFreeRows(table)) tr = fixFreeRows(state, table, tablePos, tr);
   const map = TableMap.get(table);
   if (!map.problems) return tr;
   if (!tr) tr = state.tr;
@@ -149,4 +155,47 @@ export function fixTable(
     }
   }
   return tr.setMeta(fixTablesKey, { fixTables: true });
+}
+
+// checks table for presence of free rows (rows that are direct children of table)
+export function hasFreeRows(table: Node): boolean {
+  for (let i = 0; i < table.childCount; i++)
+    if (table.child(i).type.spec.tableRole === 'row') return true;
+  return false;
+}
+
+// encloses free rows in table bodies
+export function fixFreeRows(
+  state: EditorState,
+  table: Node,
+  tablePos: number,
+  tr: Transaction | undefined,
+): Transaction | undefined {
+  let freeRows: Node[] = [];
+  let freeRowsFound = false;
+  const sections: Node[] = [];
+  const types = tableNodeTypes(state.schema);
+  for (let i = 0; i < table.childCount; i++) {
+    const child = table.child(i);
+    if (child.type.spec.tableRole === 'row') {
+      freeRowsFound = true;
+      freeRows.push(child);
+    } else {
+      if (freeRows.length > 0) {
+        sections.push(types.body.createAndFill(null, freeRows)!);
+        freeRows = [];
+      }
+      sections.push(child);
+    }
+  }
+  if (freeRows.length > 0) {
+    sections.push(types.body.createAndFill(null, freeRows)!);
+    freeRows = [];
+  }
+  if (!freeRowsFound) return tr;
+  return (tr || state.tr).replaceWith(
+    tablePos,
+    tablePos + table.nodeSize,
+    types.table.createAndFill(table.attrs, sections)!,
+  );
 }
