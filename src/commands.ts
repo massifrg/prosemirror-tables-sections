@@ -1,6 +1,12 @@
 // This file defines a number of table-related commands.
 
-import { Fragment, Node, NodeType, ResolvedPos } from 'prosemirror-model';
+import {
+  Fragment,
+  Node,
+  NodeType,
+  ResolvedPos,
+  Schema,
+} from 'prosemirror-model';
 import {
   Command,
   EditorState,
@@ -25,6 +31,11 @@ import {
   removeColSpan,
   rowPos,
   selectionCell,
+  tableDepth,
+  tableHasCaption,
+  tableHasFoot,
+  tableHasHead,
+  tableSectionsCount,
 } from './util';
 
 /**
@@ -397,6 +408,167 @@ export function deleteRow(
       }
       rect.table = table;
       rect.map = TableMap.get(rect.table);
+    }
+    dispatch(tr);
+  }
+  return true;
+}
+
+function createSection(
+  schema: Schema,
+  role: TableRole,
+  width: number,
+  cellRole?: TableRole,
+): Node | null {
+  const types = tableNodeTypes(schema);
+  const cells: Node[] = [];
+  const cellType =
+    (cellRole && types[cellRole]) || types.cell || types.header_cell;
+  for (let i = 0; i < width; i++) cells.push(cellType.createAndFill()!);
+  return types[role].createAndFill(null, types.row.createAndFill(null, cells));
+}
+
+/**
+ * Add a head section to the table, if not already present.
+ *
+ * @public
+ */
+export function addTableHead(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  const $anchor = state.selection.$anchor;
+  const d = tableDepth($anchor);
+  if (d < 0) return false;
+  const table = $anchor.node(d);
+  if (tableHasHead(table)) return false;
+  if (dispatch) {
+    let pos = $anchor.start(d);
+    const firstChild = table.child(0);
+    if (firstChild && firstChild.type.spec.tableRole === 'caption')
+      pos += firstChild.nodeSize;
+    const map = TableMap.get(table);
+    const head = createSection(state.schema, 'head', map.width, 'header_cell');
+    dispatch(state.tr.insert(pos, head!));
+  }
+  return true;
+}
+
+/**
+ * Add a foot section to the table, if not already present.
+ *
+ * @public
+ */
+export function addTableFoot(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  const $anchor = state.selection.$anchor;
+  const d = tableDepth($anchor);
+  if (d < 0) return false;
+  const table = $anchor.node(d);
+  if (tableHasFoot(table)) return false;
+  if (dispatch) {
+    const pos = $anchor.end(d);
+    const map = TableMap.get(table);
+    const foot = createSection(state.schema, 'foot', map.width, 'header_cell');
+    dispatch(state.tr.insert(pos, foot!));
+  }
+  return true;
+}
+
+/**
+ * Add a body section before the first section touched by the selection.
+ *
+ * @public
+ */
+export function addBodyBefore(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  if (!isInTable(state)) return false;
+  const rect = selectedRect(state);
+  const { map, table, tableStart } = rect;
+  const firstSection = map.sectionsInRect(rect)[0];
+  if (!firstSection || (firstSection === 0 && tableHasHead(table)))
+    return false;
+  if (dispatch) {
+    let pos = tableStart,
+      s = -1;
+    for (let i = 0; i < table.childCount; i++) {
+      const child = table.child(i);
+      if (child.type.spec.tableRole != 'caption') s++;
+      if (s === firstSection) break;
+      pos += child.nodeSize;
+    }
+    const map = TableMap.get(table);
+    const body = createSection(state.schema, 'body', map.width);
+    dispatch(state.tr.insert(pos, body!));
+  }
+  return true;
+}
+
+/**
+ * Add a body section after the first section touched by the selection.
+ *
+ * @public
+ */
+export function addBodyAfter(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  if (!isInTable(state)) return false;
+  const rect = selectedRect(state);
+  const { map, table, tableStart } = rect;
+  const sections = map.sectionsInRect(rect);
+  const lastSection = sections[sections.length - 1];
+  if (lastSection === map.sectionRows.length - 1 && tableHasFoot(table))
+    return false;
+  if (dispatch) {
+    let pos = tableStart - 1,
+      s = -1;
+    for (let i = 0; i < table.childCount; i++) {
+      const child = table.child(i);
+      pos += child.nodeSize;
+      if (child.type.spec.tableRole != 'caption') s++;
+      if (s === lastSection) break;
+    }
+    const map = TableMap.get(table);
+    const body = createSection(state.schema, 'body', map.width);
+    dispatch(state.tr.insert(pos, body!));
+  }
+  return true;
+}
+
+/**
+ * Delete selected table sections, even when partially selected.
+ *
+ * @public
+ */
+export function deleteSection(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  if (!isInTable(state)) return false;
+  const rect = selectedRect(state),
+    tr = state.tr;
+  if (rect.top == 0 && rect.bottom == rect.map.height) return false;
+  if (dispatch) {
+    const { map, table, tableStart } = rect;
+    const sections = map.sectionsInRect(rect);
+    if (sections.length >= tableSectionsCount(table) || sections.length == 0)
+      return false;
+    const firstSectionIndex = tableHasCaption(table) ? 1 : 0;
+    const sectionPosAndSize: number[][] = [];
+    let pos = tableStart;
+    for (let i = 0; i < table.childCount; i++) {
+      const size = table.child(i).nodeSize;
+      if (i >= firstSectionIndex) sectionPosAndSize.push([pos, size]);
+      pos += size;
+    }
+    for (let i = sections.length - 1; i >= 0; i--) {
+      const [pos, size] = sectionPosAndSize[sections[i]];
+      tr.delete(pos, pos + size);
     }
     dispatch(tr);
   }

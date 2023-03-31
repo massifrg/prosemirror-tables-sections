@@ -42,6 +42,11 @@ import {
   toggleHeader,
   toggleHeaderRow,
   toggleHeaderColumn,
+  addTableHead,
+  addTableFoot,
+  deleteSection,
+  addBodyBefore,
+  addBodyAfter,
 } from '../src/';
 import { logNode } from './log';
 
@@ -617,6 +622,248 @@ describe('deleteRow', () => {
         tbody(tr(c11, c11, td(p('para1')))),
       ),
     ));
+});
+
+describe('addTableHead', () => {
+  it('can add the table head section as first section', () => {
+    test(
+      table(
+        caption(p('caption')),
+        tbody(tr(c(2, 1), c11), tr(cAnchor, cHead, c11)),
+      ),
+      addTableHead,
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(cAnchor, cHead, c11)),
+      ),
+    );
+  });
+});
+
+describe('addTableFoot', () => {
+  it('can add the table foot section as last section', () => {
+    test(
+      table(
+        caption(p('caption')),
+        tbody(tr(c(2, 1), c11), tr(cAnchor, cHead, c11)),
+      ),
+      addTableFoot,
+      table(
+        caption(p('caption')),
+        tbody(tr(c(2, 1), c11), tr(cAnchor, cHead, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+    );
+  });
+});
+
+describe('deleteSection', () => {
+  it('can delete the section of the cell with the (empty) selection', () => {
+    test(
+      table(
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+      deleteSection,
+      table(
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+    );
+  });
+
+  it("can delete the section when there's a caption", () => {
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+      deleteSection,
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+    );
+  });
+
+  it('can delete two partially selected sections', () => {
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, cHead, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+      deleteSection,
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+    );
+  });
+
+  it("can't delete the whole table", () => {
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, cHead, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, cAnchor)),
+      ),
+      deleteSection,
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, cHead, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, cAnchor)),
+      ),
+    );
+  });
+});
+
+describe('addBodyBefore', () => {
+  it('can add a body section before a body', () => {
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+      addBodyBefore,
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(cEmpty, cEmpty, cEmpty)),
+        tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+    );
+  });
+  it('can add a body section before a foot section', () => {
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, cAnchor)),
+      ),
+      addBodyBefore,
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tbody(tr(cEmpty, cEmpty, cEmpty)),
+        tfoot(tr(hEmpty, hEmpty, cAnchor)),
+      ),
+    );
+  });
+  it("can't add a body section before a head section", () => {
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, cAnchor, hEmpty)),
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+      addBodyBefore,
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, cAnchor, hEmpty)),
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+    );
+  });
+});
+
+describe('addBodyAfter', () => {
+  it('can add a body section after a body', () => {
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+      addBodyAfter,
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+        tbody(tr(cEmpty, cEmpty, cEmpty)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+    );
+  });
+  it('can add a body section after a head section', () => {
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, cAnchor, hEmpty)),
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+      addBodyAfter,
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, cAnchor, hEmpty)),
+        tbody(tr(cEmpty, cEmpty, cEmpty)),
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+    );
+  });
+  it("can't add a body section after a foot section", () => {
+    test(
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, cAnchor, hEmpty)),
+      ),
+      addBodyAfter,
+      table(
+        caption(p('caption')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c11, c11, c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, cAnchor, hEmpty)),
+      ),
+    );
+  });
 });
 
 describe('mergeCells', () => {

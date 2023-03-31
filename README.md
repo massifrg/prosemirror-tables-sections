@@ -37,8 +37,6 @@ module can be used.
 
 **BEWARE**: this module is still experimental.
 
-Currently it lacks the commands to create a caption or new sections (head, body, foot).
-
 The documentation below is still valid, but it should be completed
 with some new methods.
 

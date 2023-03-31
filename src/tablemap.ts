@@ -212,6 +212,23 @@ export class TableMap {
     return result;
   }
 
+  // Return the indices of all sections that are touched (overlapped, even partially)
+  // by the given rectangle.
+  // Indices start from 0 and don't consider the caption, so if there's a caption
+  // section n is table.child(n+1), otherwise it's table.child(n)
+  sectionsInRect(rect: Rect): number[] {
+    const result: number[] = [];
+    const sectionRows = this.sectionRows;
+    let top = 0,
+      bottom = 0;
+    for (let i = 0; i < sectionRows.length; i++) {
+      bottom += sectionRows[i];
+      if (rect.top < bottom && rect.bottom > top) result.push(i);
+      top = bottom;
+    }
+    return result;
+  }
+
   isLastRowInSection(row: number): boolean {
     const srows = this.sectionRows;
     let lastRow = 0;

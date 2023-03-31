@@ -181,7 +181,7 @@ function arrow(axis: Axis, dir: Direction): Command {
         } else {
           newSel = Selection.near(state.doc.resolve(sel.$anchor.before()), -1);
           const d = tableDepth(newSel.$anchor);
-          if (d > 0) {
+          if (d >= 0) {
             const table = newSel.$anchor.node(d);
             const map = TableMap.get(table);
             const pos =
