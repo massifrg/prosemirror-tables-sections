@@ -59,7 +59,7 @@ export function isInTable(state: EditorState): boolean {
  * @internal
  */
 export function tableDepth($pos: ResolvedPos): number {
-  for (let d = $pos.depth; d > 0; d--)
+  for (let d = $pos.depth; d >= 0; d--)
     if ($pos.node(d).type.spec.tableRole == 'table') return d;
   return -1;
 }
@@ -314,4 +314,38 @@ export function tableHasCaption(table: Node): boolean {
     return table.child(0).type.spec.tableRole === 'caption';
   }
   return false;
+}
+
+export function tableHasHead(table: Node): boolean {
+  if (table && table.type.spec.tableRole === 'table') {
+    for (let i = 0; i < table.childCount; i++)
+      if (table.child(i).type.spec.tableRole === 'head') return true;
+  }
+  return false;
+}
+
+export function tableHasFoot(table: Node): boolean {
+  if (table && table.type.spec.tableRole === 'table') {
+    for (let i = table.childCount - 1; i > 0; i--)
+      if (table.child(i).type.spec.tableRole === 'foot') return true;
+  }
+  return false;
+}
+
+export function tableBodiesCount(table: Node): number {
+  let count = 0;
+  if (table && table.type.spec.tableRole === 'table') {
+    for (let i = 0; i < table.childCount; i++)
+      if (table.child(i).type.spec.tableRole === 'body') count++;
+  }
+  return count;
+}
+
+export function tableSectionsCount(table: Node): number {
+  let count = 0;
+  if (table && table.type.spec.tableRole === 'table') {
+    for (let i = 0; i < table.childCount; i++)
+      if (isTableSection(table.child(i))) count++;
+  }
+  return count;
 }
