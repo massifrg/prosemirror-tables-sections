@@ -1,6 +1,6 @@
 {
   "name": "prosemirror-tables-sections",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "prosemirror-tables derived component to support tables with caption/thead/tbody/tfoot",
   "type": "module",
   "main": "dist/index.cjs",
