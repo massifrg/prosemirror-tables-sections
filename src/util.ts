@@ -349,3 +349,15 @@ export function tableSectionsCount(table: Node): number {
   }
   return count;
 }
+
+export function isRowLastInSection(table: Node, row: number): boolean {
+  const { height, sectionRows } = TableMap.get(table);
+  if (row >= height || row < 0) return false;
+  let rowsMinusOne = -1;
+  for (let i = 0; i < sectionRows.length; i++) {
+    rowsMinusOne += sectionRows[i];
+    if (row === rowsMinusOne) return true;
+    if (row < rowsMinusOne) return false;
+  }
+  return false;
+}

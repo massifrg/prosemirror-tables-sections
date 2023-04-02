@@ -384,6 +384,16 @@ describe('addRowAfter', () => {
       table(tbody(tr(c11, c11), tr(c11, c11), tr(cEmpty, cEmpty))),
     ));
 
+  it('adds a row at the end of a section in the same section', () =>
+    test(
+      table(tbody(tr(c11, c11), tr(c11, cCursor)), tbody(tr(c11, c11))),
+      addRowAfter,
+      table(
+        tbody(tr(c11, c11), tr(c11, c11), tr(cEmpty, cEmpty)),
+        tbody(tr(c11, c11)),
+      ),
+    ));
+
   it('increases rowspan when needed', () =>
     test(
       table(tbody(tr(cCursor, c(1, 2)), tr(c11))),

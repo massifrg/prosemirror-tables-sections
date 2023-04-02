@@ -27,6 +27,7 @@ import {
   columnIsHeader,
   getRow,
   isInTable,
+  isRowLastInSection,
   moveCellForward,
   removeColSpan,
   rowPos,
@@ -227,11 +228,12 @@ export function rowIsHeader(map: TableMap, table: Node, row: number): boolean {
  */
 export function addRow(
   tr: Transaction,
-  { map, tableStart, table }: TableRect,
+  { bottom, map, tableStart, table }: TableRect,
   row: number,
 ): Transaction {
   let rPos = rowPos(table, row) + tableStart;
-  // console.log(`add row at index ${row}, rPos=${rPos} (tableStart=${tableStart})`);
+  // if adding a row after the last of a section, insert at the end of the same section
+  if (bottom === row && isRowLastInSection(table, row - 1)) rPos -= 2;
   const cells = [];
   let refRow: number | null = row > 0 ? -1 : 0;
   if (rowIsHeader(map, table, row + refRow))
