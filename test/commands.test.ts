@@ -47,6 +47,8 @@ import {
   deleteSection,
   addBodyBefore,
   addBodyAfter,
+  deleteCaption,
+  addCaption,
 } from '../src/';
 import { logNode } from './log';
 
@@ -632,6 +634,62 @@ describe('deleteRow', () => {
         tbody(tr(c11, c11, td(p('para1')))),
       ),
     ));
+});
+
+describe('addCaption', () => {
+  it('can add the table caption before the first section', () => {
+    test(
+      table(
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(cCursor, c11, c11)),
+      ),
+      addCaption,
+      table(
+        caption(p('')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(cCursor, c11, c11)),
+      ),
+    );
+  });
+
+  it("does nothing when there's already a caption", () => {
+    test(
+      table(
+        caption(p('This is the caption.')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(cCursor, c11, c11)),
+      ),
+      addCaption,
+      table(
+        caption(p('This is the caption.')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(cCursor, c11, c11)),
+      ),
+    );
+  });
+});
+
+describe('deleteCaption', () => {
+  it('can delete the section of the cell with the (empty) selection', () => {
+    test(
+      table(
+        caption(p('This is the caption.')),
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(cCursor, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+      deleteCaption,
+      table(
+        thead(tr(hEmpty, hEmpty, hEmpty)),
+        tbody(tr(c(2, 1), c11), tr(c11, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(cCursor, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, c(2, 1)), tr(c11, c11, c11)),
+        tfoot(tr(hEmpty, hEmpty, hEmpty)),
+      ),
+    );
+  });
 });
 
 describe('addTableHead', () => {

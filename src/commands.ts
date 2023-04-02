@@ -416,6 +416,51 @@ export function deleteRow(
   return true;
 }
 
+/**
+ * Add a caption to the table, if not already present.
+ *
+ * @public
+ */
+export function addCaption(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  const $anchor = state.selection.$anchor;
+  const d = tableDepth($anchor);
+  if (d < 0) return false;
+  const table = $anchor.node(d);
+  if (tableHasCaption(table)) return false;
+  if (dispatch) {
+    let pos = $anchor.start(d);
+    const types = tableNodeTypes(state.schema);
+    const caption = types.caption.createAndFill();
+    dispatch(state.tr.insert(pos, caption!));
+  }
+  return true;
+}
+
+/**
+ * Remove the caption from the table, if present.
+ *
+ * @public
+ */
+export function deleteCaption(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  const $anchor = state.selection.$anchor;
+  const d = tableDepth($anchor);
+  if (d < 0) return false;
+  const table = $anchor.node(d);
+  if (!tableHasCaption(table)) return false;
+  if (dispatch) {
+    let pos = $anchor.start(d);
+    const size = table.firstChild!.nodeSize;
+    dispatch(state.tr.delete(pos, pos + size));
+  }
+  return true;
+}
+
 function createSection(
   schema: Schema,
   role: TableRole,

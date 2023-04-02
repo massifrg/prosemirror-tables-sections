@@ -18,10 +18,12 @@ import {
   deleteColumn,
   addBodyAfter,
   addBodyBefore,
+  addCaption,
   addRowAfter,
   addRowBefore,
   addTableHead,
   addTableFoot,
+  deleteCaption,
   deleteRow,
   deleteSection,
   mergeCells,
@@ -62,6 +64,8 @@ function item(label: string, cmd: (state: EditorState) => boolean) {
   return new MenuItem({ label, select: cmd, run: cmd });
 }
 const tableMenu = [
+  item('Add table caption', addCaption),
+  item('Delete table caption', deleteCaption),
   item('Add table head', addTableHead),
   item('Add table foot', addTableFoot),
   item('Insert body before', addBodyBefore),
