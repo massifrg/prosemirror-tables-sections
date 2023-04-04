@@ -1,5 +1,6 @@
 node_modules/
 dist/
+demo/dist/
 .DS_Store
 .vscode/
 package-lock.json

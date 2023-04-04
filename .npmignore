@@ -1,2 +1,6 @@
 /node_modules
 /test
+/demo/dist
+.DS_Store
+.vscode
+package-lock.json
