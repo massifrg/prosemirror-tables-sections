@@ -1,6 +1,7 @@
 {
-  "name": "prosemirror-tables-sections",
+  "name": "@massifrg/prosemirror-tables-sections",
   "version": "0.3.2",
+  "author": "massifrg <massifrg@gmail.com>",
   "description": "prosemirror-tables derived component to support tables with caption/thead/tbody/tfoot",
   "type": "module",
   "main": "dist/index.cjs",
@@ -20,10 +21,7 @@
     "url": "git://github.com/massifrg/prosemirror-tables-sections.git"
   },
   "maintainers": [
-    {
-      "name": "M. Farinella",
-      "email": "massifrg@gmail.com"
-    }
+    "M. Farinella <massifrg@gmail.com>"
   ],
   "dependencies": {
     "prosemirror-keymap": "^1.2.1",
@@ -60,5 +58,16 @@
     "build_readme": "builddocs --name tables-sections --format markdown --main src/README.md src/index.ts > README.md",
     "format": "prettier --write .",
     "lint": "eslint ./src/ ./test/ && prettier --check ."
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/massifrg/prosemirror-tables-sections/issues"
+  },
+  "homepage": "https://github.com/massifrg/prosemirror-tables-sections#readme",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [
+    "prosemirror",
+    "tables"
+  ]
 }
