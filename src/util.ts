@@ -203,9 +203,7 @@ export function columnIsHeader(
   return true;
 }
 
-/**
- * @public
- */
+/// returns the number of rows of a table, without using its associated TableMap
 export function rowsCount(table: Node) {
   let count = 0;
   for (let c = 0; c < table.childCount; c++) {
@@ -215,16 +213,13 @@ export function rowsCount(table: Node) {
   return count;
 }
 
-/**
- * @public
- */
+/// returns an object with the node, the position and the section index of a row in a table
 export function getRow(
   table: Node,
   row: number,
-  offset: number = 0,
   // debug: boolean = false,
 ): { node: Node | null; pos: number; section: number } {
-  let rPos = offset;
+  let rPos = 0;
   let prevSectionsRows = 0;
   let sectionIndex = -1;
   for (let tc = 0; tc < table.childCount; tc++) {
@@ -273,21 +268,16 @@ export function getRow(
   return { node: null, pos: rPos, section: sectionIndex };
 }
 
-/**
- * @public
- */
+/// the relative position of a row in a table
 export function rowPos(
   table: Node,
   row: number,
-  pos: number = 0,
   // debug: boolean = false,
 ) {
-  return getRow(table, row, pos /* debug */).pos;
+  return getRow(table, row /* debug */).pos;
 }
 
-/**
- * @public
- */
+/// the index of the row at the specified relative position in the table
 export function rowAtPos(table: Node, pos: number): number {
   let rpos = 0;
   let row = 0;
@@ -308,7 +298,7 @@ export function rowAtPos(table: Node, pos: number): number {
   return row;
 }
 
-// checks whether the table has a caption node
+/// returns true when the table has a caption
 export function tableHasCaption(table: Node): boolean {
   if (table && table.type.spec.tableRole === 'table') {
     return table.child(0).type.spec.tableRole === 'caption';
@@ -316,6 +306,7 @@ export function tableHasCaption(table: Node): boolean {
   return false;
 }
 
+/// returns true if the table has a head
 export function tableHasHead(table: Node): boolean {
   if (table && table.type.spec.tableRole === 'table') {
     for (let i = 0; i < table.childCount; i++)
@@ -324,6 +315,7 @@ export function tableHasHead(table: Node): boolean {
   return false;
 }
 
+/// returns true if the table has a foot
 export function tableHasFoot(table: Node): boolean {
   if (table && table.type.spec.tableRole === 'table') {
     for (let i = table.childCount - 1; i > 0; i--)
@@ -332,6 +324,7 @@ export function tableHasFoot(table: Node): boolean {
   return false;
 }
 
+/// returns the number of bodies in the table
 export function tableBodiesCount(table: Node): number {
   let count = 0;
   if (table && table.type.spec.tableRole === 'table') {
@@ -341,6 +334,7 @@ export function tableBodiesCount(table: Node): number {
   return count;
 }
 
+/// returns the number of sections (head, bodies, foot) in the table
 export function tableSectionsCount(table: Node): number {
   let count = 0;
   if (table && table.type.spec.tableRole === 'table') {
@@ -350,6 +344,7 @@ export function tableSectionsCount(table: Node): number {
   return count;
 }
 
+/// returns true when the row is the last of a section in the table
 export function isRowLastInSection(table: Node, row: number): boolean {
   const { height, sectionRows } = TableMap.get(table);
   if (row >= height || row < 0) return false;

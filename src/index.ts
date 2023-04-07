@@ -49,13 +49,23 @@ export {
   colCount,
   columnIsHeader,
   findCell,
+  getRow,
   inSameTable,
   isInTable,
+  isRowLastInSection,
   moveCellForward,
   nextCell,
   pointsAtCell,
   removeColSpan,
+  rowPos,
+  rowAtPos,
+  rowsCount,
   selectionCell,
+  tableBodiesCount,
+  tableHasCaption,
+  tableHasFoot,
+  tableHasHead,
+  tableSectionsCount,
 } from './util';
 export type { MutableAttrs } from './util';
 export { fixTables, handlePaste, fixTablesKey };

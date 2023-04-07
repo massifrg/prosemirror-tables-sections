@@ -10,7 +10,7 @@
 // to or gotten from this structure by that amount.
 import { Attrs, Node } from 'prosemirror-model';
 import { isTableSection } from './schema';
-import { CellAttrs, getRow, rowPos } from './util';
+import { CellAttrs, getRow } from './util';
 
 /**
  * @public

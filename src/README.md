@@ -37,60 +37,230 @@ module can be used.
 
 **BEWARE**: this module is still experimental.
 
-The documentation below is still valid, but it should be completed
-with some new methods.
-
 ## Documentation
 
 The module's main file exports everything you need to work with it.
 The first thing you'll probably want to do is create a table-enabled
 schema. That's what `tableNodes` is for:
 
-@tableNodes
+* **`tableNodes`**`(options: TableNodesOptions) → TableNodes`\
+   This function creates a set of 
+   [node specs](http://prosemirror.net/docs/ref/#model.SchemaSpec.nodes)
+   for `table`, `table_caption`, `table_head`, `table_body`, `table_foot`,
+   `table_row`, `table_cell` and `table_header` nodes types as used
+   by this module.
+   The result can then be added to the set of nodes when
+   creating a schema.
 
-@tableEditing
 
-@CellSelection
+* **`tableEditing`**`(TableEditingOptions = {}) → Plugin`\
+   Creates a [plugin](http://prosemirror.net/docs/ref/#state.Plugin)
+   that, when added to an editor, enables cell-selection, handles
+   cell-based copy/paste, and makes sure tables stay well-formed
+   (each row has the same width, and cells don't overlap).
+   
+   You should probably put this plugin near the end of your array of
+   plugins, since it handles mouse and arrow key events in tables
+   rather broadly, and other plugins, like the gap cursor or the
+   column-width dragging plugin, might want to get a turn first to
+   perform more specific behavior.
+
+
+### class CellSelection extends Selection
+
+A [`Selection`](http://prosemirror.net/docs/ref/#state.Selection)
+subclass that represents a cell selection spanning part of a table.
+With the plugin enabled, these will be created when the user
+selects across cells, and will be drawn by giving selected cells a
+`selectedCell` CSS class.
+
+ * `new ` **`CellSelection`**`($anchorCell: ResolvedPos, $headCell?: ResolvedPos = $anchorCell)`
+
+ * **`$anchorCell`**`: ResolvedPos`
+
+ * **`$headCell`**`: ResolvedPos`
+
+ * **`forEachCell`**`(f: fn(node: Node, pos: number))`
+
+ * **`isColSelection`**`(tableMap?: TableMap) → boolean`
+
+ * **`isRowSelection`**`() → boolean`
+
+ * `static ` **`colSelection`**`($anchorCell: ResolvedPos, $headCell?: ResolvedPos = $anchorCell) → CellSelection`
+
+ * `static ` **`rowSelection`**`($anchorCell: ResolvedPos, $headCell?: ResolvedPos = $anchorCell) → CellSelection`
+
+ * `static ` **`sectionSelection`**`($anchorCell: ResolvedPos, $headCell?: ResolvedPos = $anchorCell) → CellSelection`
+
+ * `static ` **`fromJSON`**`(doc: Node, json: CellSelectionJSON) → CellSelection`
+
+ * `static ` **`create`**`(doc: Node, anchorCell: number, headCell?: number = anchorCell) → CellSelection`
+
 
 ### Commands
 
 The following commands can be used to make table-editing functionality
 available to users.
 
-@addColumnBefore
+* **`addColumnBefore`**`(state: EditorState, dispatch?: fn(tr: Transaction), view?: EditorView) → boolean`\
+   Command to add a column before the column with the selection.
 
-@addColumnAfter
+* **`addColumnAfter`**`(state: EditorState, dispatch?: fn(tr: Transaction), view?: EditorView) → boolean`\
+   Command to add a column after the column with the selection.
 
-@deleteColumn
+* **`deleteColumn`**`(state: EditorState, dispatch?: fn(tr: Transaction), view?: EditorView) → boolean`\
+   Command function that removes the selected columns from a table.
 
-@addRowBefore
+* **`addRowBefore`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Add a table row before the selection.
 
-@addRowAfter
+* **`addRowAfter`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Add a table row after the selection.
 
-@deleteRow
+* **`deleteRow`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Remove the selected rows from a table.
 
-@mergeCells
+* **`addCaption`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Add a caption to the table, if not already present.
 
-@splitCell
+* **`deleteCaption`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Remove the caption from the table, if present.
 
-@splitCellWithType
+* **`addTableHead`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Add a head section to the table, if not already present.
 
-@setCellAttr
+* **`addTableFoot`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Add a foot section to the table, if not already present.
 
-@toggleHeaderRow
+* **`addBodyBefore`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Add a body section before the first section touched by the selection.
 
-@toggleHeaderColumn
+* **`addBodyAfter`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Add a body section after the first section touched by the selection.
 
-@toggleHeaderCell
+* **`deleteSection`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Delete selected table sections, even when partially selected.
 
-@toggleHeader
+* **`mergeCells`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Merge the selected cells into a single cell. Only available when
+   the selected cells' outline forms a rectangle.
 
-@goToNextCell
+* **`splitCell`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Split a selected cell, whose rowpan or colspan is greater than one,
+   into smaller cells. Use the first cell type for the new cells.
 
-@deleteTable
+* **`splitCellWithType`**`(getCellType: fn(options: GetCellTypeOptions) → NodeType) → Command`\
+   Split a selected cell, whose rowpan or colspan is greater than one,
+   into smaller cells with the cell type (th, td) returned by getType function.
+
+* **`setCellAttr`**`(name: string, value: unknown) → Command`\
+   Returns a command that sets the given attribute to the given value,
+   and is only available when the currently selected cell doesn't
+   already have that attribute set to that value.
+
+* **`toggleHeaderRow`**`: Command`\
+   Toggles whether the selected row contains header cells.
+
+* **`toggleHeaderColumn`**`: Command`\
+   Toggles whether the selected column contains header cells.
+
+* **`toggleHeaderCell`**`: Command`\
+   Toggles whether the selected cells are header cells.
+
+* **`goToNextCell`**`(direction: Direction) → Command`\
+   Returns a command for selecting the next (`direction=1`) or previous
+   (`direction=-1`) cell in a table.
+
+* **`deleteTable`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Deletes the table around the selection, if any.
 
 ### Utilities
 
-@fixTables
+ * **`fixTables`**`(state: EditorState, oldState?: EditorState) → Transaction | undefined`\
+   Inspect all tables in the given state's document and return a
+   transaction that fixes them, if necessary. If `oldState` was
+   provided, that is assumed to hold a previous, known-good state,
+   which will be used to avoid re-scanning unchanged parts of the
+   document.
 
-@TableMap
+### class TableMap
+
+A table map describes the structure of a given table. To avoid
+recomputing them all the time, they are cached per table node. To
+be able to do that, positions saved in the map are relative to the
+start of the table, rather than the start of the document.
+
+* `new ` **`TableMap`**`(width: number, height: number, map: number[], sectionRows: number[], problems: Problem[] | null)`
+
+* **`width`**`: number`\
+   The number of columns
+
+* **`height`**`: number`\
+   The number of rows
+
+* **`map`**`: number[]`\
+   A width * height array with the start position of
+   the cell covering that part of the table in each slot
+
+* **`sectionRows`**`: number[]`\
+   The number of rows of each table section
+
+* **`problems`**`: Problem[] | null`\
+   An optional array of problems (cell overlap or non-rectangular
+   shape) for the table, used by the table normalizer.
+
+* **`findCell`**`(pos: number) → Rect`
+
+* **`colCount`**`(pos: number) → number`
+
+* **`nextCell`**`(pos: number, axis: "horiz" | "vert", dir: number) → number | null`
+
+* **`rectBetween`**`(a: number, b: number) → Rect`
+
+* **`cellsInRect`**`(rect: Rect) → number[]`
+
+* **`sectionsInRect`**`(rect: Rect) → number[]`
+
+* **`isLastRowInSection`**`(row: number) → boolean`
+
+* **`positionAt`**`(row: number, col: number, table: Node) → number`
+
+* **`findSection`**`(pos: number) → Rect`
+
+* **`sectionOfRow`**`(row: number) → number`
+
+* **`rectOverOneSection`**`(rect: Rect) → boolean`
+
+* `static` **`get`**`(table: Node) → TableMap`
+
+### Utility functions
+
+* **`getRow`**`(table: Node, row: number) → {node: Node | null, pos: number, section: number}`\
+   returns an object with the node, the position and the section index of a row in a table
+
+* **`isRowLastInSection`**`(table: Node, row: number) → boolean`\
+   returns true when the row is the last of a section in the table
+
+* **`rowPos`**`(table: Node, row: number) → number`\
+   the relative position of a row in a table
+
+* **`rowAtPos`**`(table: Node, pos: number) → number`\
+   the index of the row at the specified relative position in the table
+
+* **`rowsCount`**`(table: Node) → number`\
+   returns the number of rows of a table, without using its associated `TableMap`
+
+* **`tableBodiesCount`**`(table: Node) → number`\
+   returns the number of bodies in the table
+
+* **`tableHasCaption`**`(table: Node) → boolean`\
+   returns true when the table has a caption
+
+* **`tableHasFoot`**`(table: Node) → boolean`\
+   returns true if the table has a foot
+
+* **`tableHasHead`**`(table: Node) → boolean`\
+   returns true if the table has a head
+
+* **`tableSectionsCount`**`(table: Node) → number`\
+   returns the number of sections (head, bodies, foot) in the table
