@@ -537,7 +537,7 @@ export function addBodyBefore(
   const rect = selectedRect(state);
   const { map, table, tableStart } = rect;
   const firstSection = map.sectionsInRect(rect)[0];
-  if (!firstSection || (firstSection === 0 && tableHasHead(table)))
+  if (firstSection === undefined || (firstSection === 0 && tableHasHead(table)))
     return false;
   if (dispatch) {
     let pos = tableStart,
