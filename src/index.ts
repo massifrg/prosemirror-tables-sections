@@ -22,6 +22,8 @@ export {
   columnResizing,
   columnResizingPluginKey,
   ResizeState,
+  SetColWidthsAction,
+  SetTableWidthAction,
 } from './columnresizing';
 export type { ColumnResizingOptions, Dragging } from './columnresizing';
 export * from './commands';
