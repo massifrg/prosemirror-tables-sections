@@ -39,7 +39,6 @@ export interface TableWidthDecorationSpec extends SetTableWidthAction {
   type: 'tablewidth';
 }
 
-
 /**
  * @public
  */

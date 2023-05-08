@@ -22,10 +22,13 @@ export {
   columnResizing,
   columnResizingPluginKey,
   ResizeState,
+} from './columnresizing';
+export type {
+  ColumnResizingOptions,
+  Dragging,
   SetColWidthsAction,
   SetTableWidthAction,
 } from './columnresizing';
-export type { ColumnResizingOptions, Dragging } from './columnresizing';
 export * from './commands';
 export {
   clipCells as __clipCells,
