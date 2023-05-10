@@ -33,6 +33,7 @@ export interface SetColWidthsAction {
 const SPEC_TABLE_WIDTH = 'tablewidth';
 export interface SetTableWidthAction {
   pos: number;
+  width: number;
   css: Record<string, string>;
 }
 export interface TableWidthDecorationSpec extends SetTableWidthAction {
@@ -551,8 +552,8 @@ export function updateColumnsOnResize(
   const tableWidth = totalWidth + 'px';
   const setTableWidth: SetTableWidthAction[] = [
     fixedWidth
-      ? { pos, css: { 'min-width': '', width: tableWidth } }
-      : { pos, css: { 'min-width': tableWidth, width: '' } },
+      ? { pos, width: totalWidth, css: { 'min-width': '', width: tableWidth } }
+      : { pos, width: totalWidth, css: { 'min-width': tableWidth, width: '' } },
   ];
   if (view) {
     view.dispatch(
