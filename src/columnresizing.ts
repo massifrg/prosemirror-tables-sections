@@ -21,7 +21,7 @@ export type ColumnResizingOptions = {
 };
 
 const SPEC_COL_WIDTHS = 'colgroup';
-interface ColgroupDecorationSpec {
+export interface ColgroupDecorationSpec {
   type: 'colgroup';
   colWidths: string[];
 }
@@ -564,31 +564,3 @@ export function updateColumnsOnResize(
   }
   return { colWidths, tableWidth };
 }
-
-// export function updateColgroup(view: EditorView, rect: TableRect): Transaction {
-//   const seen: Record<number, boolean> = {};
-//   const { table, tableStart } = rect;
-//   const { map, width } = rect.map;
-//   const colWidths: number[] = [];
-//   for (let c = 0; c < width; c++) colWidths[c] = 0;
-//   for (let i = 0; i < map.length; i++) {
-//     const col = i % width;
-//     const pos = map[i];
-//     if (!seen[pos]) {
-//       colWidths[col] = currentColWidth(
-//         view,
-//         tableStart + pos,
-//         table.nodeAt(pos)!.attrs,
-//       );
-//       seen[pos] = true;
-//     }
-//   }
-//   const totalWidth = colWidths.reduce((tot, w) => tot + w, 0);
-//   return view.state.tr;
-//   // .setMeta(columnResizingPluginKey, {
-//   //   setColWidths: { tableStart, colWidths },
-//   // })
-//   // .setMeta(columnResizingPluginKey, {
-//   //   setTableWidth: { pos: tableStart - 1, css: { width: totalWidth + 'px' } },
-//   // });
-// }
