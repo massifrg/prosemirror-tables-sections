@@ -39,7 +39,11 @@ import {
   tableHasHead,
   tableSectionsCount,
 } from './util';
-import { columnResizingPluginKey, getCellMinWidth, getTableWidths } from './columnresizing';
+import {
+  columnResizingPluginKey,
+  getCellMinWidth,
+  getTableWidths,
+} from './columnresizing';
 
 /**
  * @public
@@ -608,21 +612,17 @@ function makeSection(
     let inSelection = false;
     let accSectionRows = Fragment.empty;
 
-    console.log(`top=${top}, bottom=${bottom}`);
     for (let i = 0; i < table.childCount; i++) {
       const section = table.child(i);
       const sectionRole = section.type.spec.tableRole;
       if (isTableSection(section)) {
         const sectionRowsCount = section.childCount;
         const lastRow = row + sectionRowsCount - 1;
-        console.log(`section ${i}: rows ${row}-${lastRow}`);
         if (row === top && lastRow + 1 === bottom && sectionRole === role) {
-          console.log("can't make a section out of itself");
           return false;
         }
         if (row >= bottom || lastRow < top) {
           // section does not overlap selection
-          console.log(`section ${i} (${sectionRole}) is outside selection`);
           newTableContents = newTableContents.addToEnd(section);
         } else {
           if (!refSection) refSection = section;
@@ -661,11 +661,20 @@ function makeSection(
         newTableContents = newTableContents.addToEnd(section);
       }
     }
-    const tr = state.tr;
-    tr.setSelection(new NodeSelection(state.doc.resolve(tableStart - 1)));
-    tr.replaceSelectionWith(table.copy(newTableContents));
-    // tr.setSelection(new CellSelection())
-    tr.setMeta(columnResizingPluginKey, getTableWidths(table, tableStart, getCellMinWidth(state)));
+    const { doc, tr } = state;
+    tr.setSelection(new NodeSelection(doc.resolve(tableStart - 1)));
+    const newTable = table.copy(newTableContents);
+    tr.replaceSelectionWith(newTable);
+    const cellsPositions = TableMap.get(newTable).cellsInRect(rect);
+    const $anchorCell = tr.doc.resolve(tableStart + cellsPositions[0] );
+    const $headCell = tr.doc.resolve(
+      tableStart + cellsPositions[cellsPositions.length - 1],
+    );
+    tr.setSelection(new CellSelection($anchorCell, $headCell));
+    tr.setMeta(
+      columnResizingPluginKey,
+      getTableWidths(table, tableStart, getCellMinWidth(state)),
+    );
     dispatch(tr);
   }
   return true;
