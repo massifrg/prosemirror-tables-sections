@@ -593,6 +593,19 @@ export function addBodyAfter(
   return true;
 }
 
+function fixRowCells(row: Node, headerCellType: NodeType): Node {
+  const newCells: Node[] = [];
+  for (let i = 0; i < row.childCount; i++) {
+    const cell = row.child(i);
+    newCells.push(
+      cell.type.spec.tableRole === 'header_cell'
+        ? cell
+        : headerCellType.create(cell.attrs, cell.content),
+    );
+  }
+  return row.copy(Fragment.from(newCells));
+}
+
 function makeSection(
   role: TableRole,
   state: EditorState,
@@ -603,12 +616,17 @@ function makeSection(
   const { map, table, tableStart, top, bottom } = rect;
   if (role === 'head' && top > 0) return false;
   if (role === 'foot' && bottom < map.height) return false;
-  const newSectionType = tableNodeTypes(state.schema)[role];
+  const tableTypes = tableNodeTypes(state.schema);
+  const newSectionType = tableTypes[role];
   if (!newSectionType) return false;
+  const fixCellsType =
+    (role === 'head' || role === 'foot') &&
+    tableTypes.cell &&
+    tableTypes.header_cell;
   if (dispatch) {
     let newTableContents = Fragment.empty;
     let refSection: Node | null = null;
-    let row = 0;
+    let rowIndex = 0;
     let inSelection = false;
     let accSectionRows = Fragment.empty;
 
@@ -617,17 +635,21 @@ function makeSection(
       const sectionRole = section.type.spec.tableRole;
       if (isTableSection(section)) {
         const sectionRowsCount = section.childCount;
-        const lastRow = row + sectionRowsCount - 1;
-        if (row === top && lastRow + 1 === bottom && sectionRole === role) {
+        const lastRow = rowIndex + sectionRowsCount - 1;
+        if (
+          rowIndex === top &&
+          lastRow + 1 === bottom &&
+          sectionRole === role
+        ) {
           return false;
         }
-        if (row >= bottom || lastRow < top) {
+        if (rowIndex >= bottom || lastRow < top) {
           // section does not overlap selection
           newTableContents = newTableContents.addToEnd(section);
         } else {
           if (!refSection) refSection = section;
           for (let j = 0; j < section.childCount; j++) {
-            if (row + j === top) {
+            if (rowIndex + j === top) {
               if (accSectionRows.childCount > 0) {
                 newTableContents = newTableContents.addToEnd(
                   refSection.copy(accSectionRows),
@@ -636,8 +658,12 @@ function makeSection(
               }
               inSelection = true;
             }
-            accSectionRows = accSectionRows.addToEnd(section.child(j));
-            if (row + j === bottom - 1) {
+            const row =
+              inSelection && fixCellsType
+                ? fixRowCells(section.child(j), tableTypes.header_cell)
+                : section.child(j);
+            accSectionRows = accSectionRows.addToEnd(row);
+            if (rowIndex + j === bottom - 1) {
               if (refSection.type.spec.tableRole !== role) refSection = section;
               const newSection =
                 refSection.type.spec.tableRole !== role
@@ -656,7 +682,7 @@ function makeSection(
             accSectionRows = Fragment.empty;
           }
         }
-        row = lastRow + 1;
+        rowIndex = lastRow + 1;
       } else {
         newTableContents = newTableContents.addToEnd(section);
       }
@@ -666,7 +692,7 @@ function makeSection(
     const newTable = table.copy(newTableContents);
     tr.replaceSelectionWith(newTable);
     const cellsPositions = TableMap.get(newTable).cellsInRect(rect);
-    const $anchorCell = tr.doc.resolve(tableStart + cellsPositions[0] );
+    const $anchorCell = tr.doc.resolve(tableStart + cellsPositions[0]);
     const $headCell = tr.doc.resolve(
       tableStart + cellsPositions[cellsPositions.length - 1],
     );
