@@ -45,15 +45,27 @@ export interface TableWidthDecorationSpec extends SetTableWidthAction {
  */
 export type Dragging = { startX: number; startWidth: number };
 
+/** @public */
+export const DEFAULT_HANDLE_WIDTH = 5;
+/** @public */
+export const DEFAULT_CELL_MIN_WIDTH = 25;
+/** @public */
+export const DEFAULT_LAST_COLUMN_RESIZABLE = true;
+
 /**
  * @public
  */
 export function columnResizing({
-  handleWidth = 5,
-  cellMinWidth = 25,
-  lastColumnResizable = true,
+  handleWidth = DEFAULT_HANDLE_WIDTH,
+  cellMinWidth = DEFAULT_CELL_MIN_WIDTH,
+  lastColumnResizable = DEFAULT_LAST_COLUMN_RESIZABLE,
 }: ColumnResizingOptions = {}): Plugin {
   const plugin = new Plugin<ResizeState>({
+    options: {
+      handleWidth,
+      cellMinWidth,
+      lastColumnResizable,
+    },
     key: columnResizingPluginKey,
     state: {
       init(_, state) {
@@ -531,6 +543,38 @@ export function updateColumnsOnResize(
   overrideCol?: number,
   overrideValue?: number,
 ): { colWidths: string[]; tableWidth: string } | undefined {
+  const { setColWidths, setTableWidth } = getTableWidths(
+    table,
+    tableStart,
+    cellMinWidth,
+    overrideCol,
+    overrideValue,
+  )!;
+  const colWidths = setColWidths[0].colWidths;
+  const tableWidth = setTableWidth[0].width + 'px';
+  if (view) {
+    view.dispatch(
+      view.state.tr.setMeta(columnResizingPluginKey, {
+        setColWidths,
+        setTableWidth,
+      }),
+    );
+  }
+  return { colWidths, tableWidth };
+}
+
+export function getCellMinWidth(state: EditorState): number {
+  const plugin = columnResizingPluginKey.get(state)
+  return plugin && plugin.spec.options.cellMinWidth || 25
+}
+
+export function getTableWidths(
+  table: ProsemirrorNode,
+  tableStart: number,
+  cellMinWidth: number,
+  overrideCol?: number,
+  overrideValue?: number,
+) {
   let totalWidth = 0;
   let fixedWidth = true;
   const row = getRow(table, 0).node;
@@ -555,13 +599,5 @@ export function updateColumnsOnResize(
       ? { pos, width: totalWidth, css: { 'min-width': '', width: tableWidth } }
       : { pos, width: totalWidth, css: { 'min-width': tableWidth, width: '' } },
   ];
-  if (view) {
-    view.dispatch(
-      view.state.tr.setMeta(columnResizingPluginKey, {
-        setColWidths,
-        setTableWidth,
-      }),
-    );
-  }
-  return { colWidths, tableWidth };
+  return { setColWidths, setTableWidth };
 }

@@ -10,6 +10,7 @@ import {
 import {
   Command,
   EditorState,
+  NodeSelection,
   TextSelection,
   Transaction,
 } from 'prosemirror-state';
@@ -38,6 +39,7 @@ import {
   tableHasHead,
   tableSectionsCount,
 } from './util';
+import { columnResizingPluginKey, getCellMinWidth, getTableWidths } from './columnresizing';
 
 /**
  * @public
@@ -585,6 +587,124 @@ export function addBodyAfter(
     dispatch(state.tr.insert(pos, body!));
   }
   return true;
+}
+
+function makeSection(
+  role: TableRole,
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  if (!isInTable(state)) return false;
+  const rect = selectedRect(state);
+  const { map, table, tableStart, top, bottom } = rect;
+  if (role === 'head' && top > 0) return false;
+  if (role === 'foot' && bottom < map.height) return false;
+  const newSectionType = tableNodeTypes(state.schema)[role];
+  if (!newSectionType) return false;
+  if (dispatch) {
+    let newTableContents = Fragment.empty;
+    let refSection: Node | null = null;
+    let row = 0;
+    let inSelection = false;
+    let accSectionRows = Fragment.empty;
+
+    console.log(`top=${top}, bottom=${bottom}`);
+    for (let i = 0; i < table.childCount; i++) {
+      const section = table.child(i);
+      const sectionRole = section.type.spec.tableRole;
+      if (isTableSection(section)) {
+        const sectionRowsCount = section.childCount;
+        const lastRow = row + sectionRowsCount - 1;
+        console.log(`section ${i}: rows ${row}-${lastRow}`);
+        if (row === top && lastRow + 1 === bottom && sectionRole === role) {
+          console.log("can't make a section out of itself");
+          return false;
+        }
+        if (row >= bottom || lastRow < top) {
+          // section does not overlap selection
+          console.log(`section ${i} (${sectionRole}) is outside selection`);
+          newTableContents = newTableContents.addToEnd(section);
+        } else {
+          if (!refSection) refSection = section;
+          for (let j = 0; j < section.childCount; j++) {
+            if (row + j === top) {
+              if (accSectionRows.childCount > 0) {
+                newTableContents = newTableContents.addToEnd(
+                  refSection.copy(accSectionRows),
+                );
+                accSectionRows = Fragment.empty;
+              }
+              inSelection = true;
+            }
+            accSectionRows = accSectionRows.addToEnd(section.child(j));
+            if (row + j === bottom - 1) {
+              if (refSection.type.spec.tableRole !== role) refSection = section;
+              const newSection =
+                refSection.type.spec.tableRole !== role
+                  ? newSectionType.create(null, accSectionRows)
+                  : refSection.copy(accSectionRows);
+              newTableContents = newTableContents.addToEnd(newSection);
+              accSectionRows = Fragment.empty;
+              refSection = section;
+              inSelection = false;
+            }
+          }
+          if (!inSelection && accSectionRows.childCount > 0) {
+            newTableContents = newTableContents.addToEnd(
+              refSection.copy(accSectionRows),
+            );
+            accSectionRows = Fragment.empty;
+          }
+        }
+        row = lastRow + 1;
+      } else {
+        newTableContents = newTableContents.addToEnd(section);
+      }
+    }
+    const tr = state.tr;
+    tr.setSelection(new NodeSelection(state.doc.resolve(tableStart - 1)));
+    tr.replaceSelectionWith(table.copy(newTableContents));
+    // tr.setSelection(new CellSelection())
+    tr.setMeta(columnResizingPluginKey, getTableWidths(table, tableStart, getCellMinWidth(state)));
+    dispatch(tr);
+  }
+  return true;
+}
+
+/**
+ * Make a new body section of the selected rows.
+ *
+ * @public
+ */
+export function makeBody(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  return makeSection('body', state, dispatch);
+}
+
+/**
+ * Make a new body section of the selected rows.
+ *
+ * @public
+ */
+export function makeHead(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  return makeSection('head', state, dispatch);
+}
+
+/**
+ * Make a new body section of the selected rows.
+ *
+ * @public
+ */
+export function makeFoot(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+): boolean {
+  return makeSection('foot', state, dispatch);
 }
 
 /**

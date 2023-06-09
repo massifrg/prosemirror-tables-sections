@@ -1,7 +1,6 @@
 // Various helper function for working with tables
 
 import { EditorState, NodeSelection, PluginKey } from 'prosemirror-state';
-
 import { Attrs, Node, ResolvedPos } from 'prosemirror-model';
 import { CellSelection } from './cellselection';
 import { isTableSection, tableNodeTypes } from './schema';
