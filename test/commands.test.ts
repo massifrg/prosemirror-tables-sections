@@ -27,6 +27,8 @@ import {
   thead,
   tfoot,
   caption,
+  hAnchor,
+  hHead,
 } from './build';
 import {
   addColumnAfter,
@@ -49,6 +51,9 @@ import {
   addBodyAfter,
   deleteCaption,
   addCaption,
+  makeBody,
+  makeHead,
+  makeFoot,
 } from '../src/';
 import { logNode } from './log';
 
@@ -1240,5 +1245,179 @@ describe('toggleHeader', () => {
         toggleHeader('column', { useDeprecatedLogic: false }),
         doc(table(tbody(tr(hCursor, h11), tr(c11, c11)))),
       ));
+  });
+});
+
+describe('makeBody', () => {
+  it('makes a new table body at the start of an existing body', () =>
+    test(
+      doc(
+        table(
+          tbody(tr(cAnchor, c11, c11), tr(c11, cHead, c11), tr(c11, c11, c11)),
+        ),
+      ),
+      makeBody,
+      doc(
+        table(
+          tbody(tr(cAnchor, c11, c11), tr(c11, cHead, c11)),
+          tbody(tr(c11, c11, c11)),
+        ),
+      ),
+    ));
+
+  it('makes a new table body at the end of an existing body', () =>
+    test(
+      doc(
+        table(
+          tbody(tr(c11, c11, c11), tr(c11, cAnchor, c11), tr(c11, c11, cHead)),
+        ),
+      ),
+      makeBody,
+      doc(
+        table(
+          tbody(tr(c11, c11, c11)),
+          tbody(tr(c11, cAnchor, c11), tr(c11, c11, cHead)),
+        ),
+      ),
+    ));
+
+  it('makes a new table body inside an existing body', () =>
+    test(
+      doc(
+        table(
+          tbody(
+            tr(c11, c11, c11),
+            tr(cAnchor, c11, c11),
+            tr(c11, c11, cHead),
+            tr(c11, c11, c11),
+          ),
+        ),
+      ),
+      makeBody,
+      doc(
+        table(
+          tbody(tr(c11, c11, c11)),
+          tbody(tr(cAnchor, c11, c11), tr(c11, c11, cHead)),
+          tbody(tr(c11, c11, c11)),
+        ),
+      ),
+    ));
+
+  it('makes a new table body across two existing bodies', () =>
+    test(
+      doc(
+        table(
+          tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+          tbody(tr(c11, c11, cHead), tr(c11, c11, c11)),
+        ),
+      ),
+      makeBody,
+      doc(
+        table(
+          tbody(tr(c11, c11, c11)),
+          tbody(tr(cAnchor, c11, c11), tr(c11, c11, cHead)),
+          tbody(tr(c11, c11, c11)),
+        ),
+      ),
+    ));
+
+  it('makes a new table body when a whole body and part of next one are selected', () =>
+    test(
+      doc(
+        table(
+          tbody(tr(cAnchor, c11, c11), tr(c11, c11, c11)),
+          tbody(tr(c11, c11, cHead), tr(c11, c11, c11)),
+        ),
+      ),
+      makeBody,
+      doc(
+        table(
+          tbody(tr(cAnchor, c11, c11), tr(c11, c11, c11), tr(c11, c11, cHead)),
+          tbody(tr(c11, c11, c11)),
+        ),
+      ),
+    ));
+
+  it('makes a new table body when the last part of a body and the whole next one are selected', () =>
+    test(
+      doc(
+        table(
+          tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+          tbody(tr(c11, c11, c11), tr(c11, cHead, c11)),
+        ),
+      ),
+      makeBody,
+      doc(
+        table(
+          tbody(tr(c11, c11, c11)),
+          tbody(tr(cAnchor, c11, c11), tr(c11, c11, c11), tr(c11, cHead, c11)),
+        ),
+      ),
+    ));
+});
+
+describe('makeHead', () => {
+  it('makes a new table head with the first selected rows', () =>
+    test(
+      doc(
+        table(
+          tbody(tr(cAnchor, c11, c11), tr(c11, c11, c11)),
+          tbody(tr(c11, c11, c11), tr(c11, cHead, c11), tr(c11, c11, c11)),
+        ),
+      ),
+      makeHead,
+      doc(
+        table(
+          thead(
+            tr(hAnchor, h11, h11),
+            tr(h11, h11, h11),
+            tr(h11, h11, h11),
+            tr(h11, hHead, h11),
+          ),
+          tbody(tr(c11, c11, c11)),
+        ),
+      ),
+    ));
+  it('does nothing when the first rows are not selected', () => {
+    const d = doc(
+      table(
+        tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, cHead, c11), tr(c11, c11, c11)),
+      ),
+    );
+    test(d, makeHead, d);
+  });
+});
+
+describe('makeFoot', () => {
+  it('makes a new table foot with the last selected rows', () =>
+    test(
+      doc(
+        table(
+          tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11), tr(c11, c11, c11)),
+          tbody(tr(c11, c11, c11), tr(c11, cHead, c11)),
+        ),
+      ),
+      makeFoot,
+      doc(
+        table(
+          tbody(tr(c11, c11, c11)),
+          tfoot(
+            tr(hAnchor, h11, h11),
+            tr(h11, h11, h11),
+            tr(h11, h11, h11),
+            tr(h11, hHead, h11),
+          ),
+        ),
+      ),
+    ));
+  it('does nothing when the last rows are not selected', () => {
+    const d = doc(
+      table(
+        tbody(tr(c11, c11, c11), tr(cAnchor, c11, c11)),
+        tbody(tr(c11, c11, c11), tr(c11, cHead, c11), tr(c11, c11, c11)),
+      ),
+    );
+    test(d, makeFoot, d);
   });
 });

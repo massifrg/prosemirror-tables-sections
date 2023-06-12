@@ -64,6 +64,8 @@ export function h(colspan: number, rowspan: number) {
 export const h11 = h(1, 1);
 export const hEmpty = th(p());
 export const hCursor = th(p('x<cursor>'));
+export const hAnchor = th(p('x<anchor>'));
+export const hHead = th(p('x<head>'));
 
 export function selectionFor(doc: TaggedNode) {
   const cursor = doc.tag.cursor;
