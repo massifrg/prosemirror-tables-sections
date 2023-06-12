@@ -33,10 +33,6 @@ The top-level directory contains a `demo.js` and `index.html`, which
 can be built with `yarn build_demo` to show a simple demo of how the
 module can be used.
 
-## Current state
-
-**BEWARE**: this module is still experimental.
-
 ## Documentation
 
 The module's main file exports everything you need to work with it.
@@ -140,6 +136,15 @@ available to users.
 
 * **`deleteSection`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
    Delete selected table sections, even when partially selected.
+
+* **`makeBody`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Make a new table body with the rows in the selection.
+
+* **`makeHead`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Make the table head with the rows in the selection (they must be the first rows).
+
+* **`makeFoot`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
+   Make the table foot with the rows in the selection (they must be the last rows).
 
 * **`mergeCells`**`(state: EditorState, dispatch?: fn(tr: Transaction)) → boolean`\
    Merge the selected cells into a single cell. Only available when
