@@ -123,6 +123,3 @@ if (fix) state = state.apply(fix.setMeta('addToHistory', false));
 (window as any).view = new EditorView(document.querySelector('#editor'), {
   state,
 });
-
-document.execCommand('enableObjectResizing', false, 'false');
-document.execCommand('enableInlineTableEditing', false, 'false');

@@ -1,6 +1,6 @@
 {
   "name": "@massifrg/prosemirror-tables-sections",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "author": "massifrg <massifrg@gmail.com>",
   "description": "prosemirror-tables derived component to support tables with caption/thead/tbody/tfoot",
   "type": "module",
