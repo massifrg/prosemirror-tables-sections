@@ -30,8 +30,16 @@ of the `table` element.
 [Decorations](https://prosemirror.net/docs/ref/#view.Decorations).
 
 The top-level directory contains a `demo.js` and `index.html`, which
-can be built with `yarn build_demo` to show a simple demo of how the
-module can be used.
+can be built with `npm run build_demo` or `yarn build_demo`
+to show a simple demo of how the module can be used.
+
+## Version
+
+This is version 0.5.0, and it fixes the "copy and paste" of tables.
+
+Until version 0.4.9 the pasted tables (or parts of tables)
+did not keep their column widths.
+Now you should get an exact copy.
 
 ## Documentation
 

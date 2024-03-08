@@ -126,10 +126,31 @@ export function columnResizing({
         return decos;
       },
 
-      // nodeViews: {},
+      handlePaste(view, event, slice) {
+        let tableInPasted = false;
+        slice.content.descendants((node) => {
+          if (node.type.spec?.tableRole) tableInPasted = true;
+          return !tableInPasted;
+        });
+        if (tableInPasted) {
+          const state = view.state;
+          const selection = state.selection;
+          const from = selection.from;
+          const to = from + slice.size;
+          const pluginState = columnResizingPluginKey.getState(state);
+          if (pluginState) pluginState.refreshDecos = { from, to, cellMinWidth };
+        }
+      },
     },
   });
   return plugin;
+}
+
+export interface ColumnResizingAction {
+  setHandle?: number;
+  setDragging?: Dragging;
+  setColWidths?: SetColWidthsAction[];
+  setTableWidth?: TableWidthDecorationSpec[];
 }
 
 /**
@@ -140,6 +161,7 @@ export class ResizeState {
     public activeHandle: number,
     public dragging: Dragging | false,
     public tableDecos: DecorationSet,
+    public refreshDecos?: { from: number; to: number; cellMinWidth?: number },
   ) {}
 
   apply(tr: Transaction): ResizeState {
@@ -150,58 +172,69 @@ export class ResizeState {
       state.tableDecos = state.tableDecos.map(tr.mapping, tr.doc);
     }
 
-    const action = tr.getMeta(columnResizingPluginKey);
-    if (action) {
-      if (action.setHandle != null)
-        return new ResizeState(action.setHandle, false, state.tableDecos);
-      if (action.setDragging !== undefined)
-        return new ResizeState(
-          state.activeHandle,
-          action.setDragging,
-          state.tableDecos,
-        );
-      let decos = state.tableDecos;
-      if (action.setColWidths) {
-        const scws: SetColWidthsAction[] = action.setColWidths;
-        scws.forEach((scw) => {
-          const removed = decos.find(
-            scw.tableStart - 1,
-            scw.tableStart,
-            (spec) => spec.type === SPEC_COL_WIDTHS,
-          );
-          if (removed) decos = decos.remove(removed);
-          const deco = colgroupDecoration(scw.tableStart, scw.colWidths);
-          decos = decos.add(tr.doc, [deco]);
-        });
-      }
-      if (action.setTableWidth) {
-        let decos = state.tableDecos;
-        const stws: SetTableWidthAction[] =
-          action.setTableWidth as TableWidthDecorationSpec[];
-        stws.forEach((stw) => {
-          const removed = decos.find(
-            stw.pos,
-            stw.pos + 1,
-            (spec) => spec.type === SPEC_TABLE_WIDTH,
-          );
-          if (removed) {
-            const newDecos: Decoration[] = [];
-            removed.forEach((r) => {
-              const pos = tr.mapping.map(stw.pos);
-              const table = tr.doc.nodeAt(pos);
-              if (table?.type.spec.tableRole === 'table') {
-                newDecos.push(
-                  tableWidthDecoration(pos, pos + table.nodeSize, stw.css),
-                );
-              }
-            });
-            if (newDecos) decos = decos.remove(removed).add(tr.doc, newDecos);
-          }
-        });
-      }
-      if (decos !== state.tableDecos)
-        return new ResizeState(state.activeHandle, state.dragging, decos);
+    const action: ColumnResizingAction = tr.getMeta(columnResizingPluginKey);
+    let { setHandle, setDragging, setColWidths, setTableWidth } = action || {
+      setHandle: null,
+    };
+
+    if (this.refreshDecos) {
+      const { from, to, cellMinWidth } = this.refreshDecos;
+      const refresh = fixTablesWidthsAction(
+        tr.doc,
+        cellMinWidth || 25,
+        from,
+        to,
+      );
+      setColWidths = refresh?.setColWidths;
+      setTableWidth = refresh?.setTableWidth;
     }
+
+    if (setHandle != null)
+      return new ResizeState(setHandle, false, state.tableDecos);
+    if (setDragging !== undefined)
+      return new ResizeState(state.activeHandle, setDragging, state.tableDecos);
+    let decos = state.tableDecos;
+    if (setColWidths) {
+      const scws: SetColWidthsAction[] = setColWidths;
+      scws.forEach((scw) => {
+        const removed = decos.find(
+          scw.tableStart - 1,
+          scw.tableStart,
+          (spec) => spec.type === SPEC_COL_WIDTHS,
+        );
+        if (removed) decos = decos.remove(removed);
+        const deco = colgroupDecoration(scw.tableStart, scw.colWidths);
+        decos = decos.add(tr.doc, [deco]);
+      });
+    }
+    if (setTableWidth) {
+      let decos = state.tableDecos;
+      const stws: SetTableWidthAction[] =
+        setTableWidth as TableWidthDecorationSpec[];
+      stws.forEach((stw) => {
+        const removed = decos.find(
+          stw.pos,
+          stw.pos + 1,
+          (spec) => spec.type === SPEC_TABLE_WIDTH,
+        );
+        if (removed) {
+          const newDecos: Decoration[] = [];
+          removed.forEach((r) => {
+            const pos = tr.mapping.map(stw.pos);
+            const table = tr.doc.nodeAt(pos);
+            if (table?.type.spec.tableRole === 'table') {
+              newDecos.push(
+                tableWidthDecoration(pos, pos + table.nodeSize, stw.css),
+              );
+            }
+          });
+          if (newDecos) decos = decos.remove(removed).add(tr.doc, newDecos);
+        }
+      });
+    }
+    if (decos !== state.tableDecos)
+      return new ResizeState(state.activeHandle, state.dragging, decos);
+
     if (tr.docChanged && state.activeHandle > -1) {
       let handle = tr.mapping.map(state.activeHandle, -1);
       if (!pointsAtCell(tr.doc.resolve(handle))) {
@@ -564,8 +597,8 @@ export function updateColumnsOnResize(
 }
 
 export function getCellMinWidth(state: EditorState): number {
-  const plugin = columnResizingPluginKey.get(state)
-  return plugin && plugin.spec.options.cellMinWidth || 25
+  const plugin = columnResizingPluginKey.get(state);
+  return (plugin && plugin.spec.options.cellMinWidth) || 25;
 }
 
 export function getTableWidths(
@@ -600,4 +633,44 @@ export function getTableWidths(
       : { pos, width: totalWidth, css: { 'min-width': tableWidth, width: '' } },
   ];
   return { setColWidths, setTableWidth };
+}
+
+interface NodeWithPos {
+  node: ProsemirrorNode;
+  pos: number;
+}
+
+export function fixTablesWidthsAction(
+  doc: ProsemirrorNode,
+  cellMinWidth: number,
+  from?: number,
+  to?: number,
+): ColumnResizingAction | undefined {
+  const np: NodeWithPos[] = [];
+  if (from && to) {
+    doc.nodesBetween(from, to, (node, pos) => {
+      if (node.type.name === 'table') np.push({ node, pos });
+    });
+  } else {
+    doc.descendants((node, pos) => {
+      if (node.type.name === 'table') np.push({ node, pos });
+    });
+  }
+  if (np.length === 0) return undefined;
+  let setColWidths: SetColWidthsAction[] = [];
+  let setTableWidth: TableWidthDecorationSpec[] = [];
+  np.forEach(({ node, pos }) => {
+    const result = getTableWidths(node, pos + 1, cellMinWidth);
+    if (result) {
+      const twdecospec: TableWidthDecorationSpec[] = result.setTableWidth.map(
+        (tw) => ({ ...tw, type: 'tablewidth' }),
+      );
+      setColWidths = setColWidths.concat(result.setColWidths);
+      setTableWidth = setTableWidth.concat(twdecospec);
+    }
+  });
+  return {
+    setColWidths,
+    setTableWidth,
+  };
 }
