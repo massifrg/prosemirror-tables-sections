@@ -26,8 +26,6 @@ export {
 export type {
   ColumnResizingOptions,
   Dragging,
-  SetColWidthsAction,
-  SetTableWidthAction,
 } from './columnresizing';
 export * from './commands';
 export {

@@ -41,8 +41,6 @@ import {
 } from './util';
 import {
   columnResizingPluginKey,
-  getCellMinWidth,
-  getTableWidths,
 } from './columnresizing';
 
 /**
@@ -697,10 +695,6 @@ function makeSection(
       tableStart + cellsPositions[cellsPositions.length - 1],
     );
     tr.setSelection(new CellSelection($anchorCell, $headCell));
-    tr.setMeta(
-      columnResizingPluginKey,
-      getTableWidths(table, tableStart, getCellMinWidth(state)),
-    );
     dispatch(tr);
   }
   return true;

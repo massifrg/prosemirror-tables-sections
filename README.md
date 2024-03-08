@@ -19,27 +19,27 @@ and an optional foot (`tfoot`).
 It defines four additional table roles: `head`, `body`, `foot` and `caption`.
 The first three are "section roles".
 
-`prosemirror-tables` defines a custom
-[TableView](https://github.com/ProseMirror/prosemirror-tables/blob/master/src/tableview.ts)
-that creates the `colgroup` DOM element and manages the `style` attribute
-of the `table` element.
-
-`prosemirror-tables-sections` does not need a custom 
-[EditorView](https://prosemirror.net/docs/ref/#view.EditorView).
-`colgroup` and table's `style` are set through 
-[Decorations](https://prosemirror.net/docs/ref/#view.Decorations).
-
 The top-level directory contains a `demo.js` and `index.html`, which
 can be built with `npm run build_demo` or `yarn build_demo`
 to show a simple demo of how the module can be used.
 
 ## Version
 
-This is version 0.5.0, and it fixes the "copy and paste" of tables.
+This is version 0.6.0, and it goes back to the implementation
+of `columnresizing.ts` and `tableview.ts` you find in the original
+[prosemirror-tables](https://github.com/ProseMirror/prosemirror-tables),
+adapted to table sections.
 
-Until version 0.4.9 the pasted tables (or parts of tables)
-did not keep their column widths.
-Now you should get an exact copy.
+BTW, thanks to the people maintaining the original project,
+in particular for the translation into Typescript, that let
+me go back to the original implementation of column resizing.
+
+## Known issues
+
+When you copy a portion of a table and you paste, you'll get a table
+with all the cells you copied, but they will be all in a table foot.
+
+Anyway, you can correct it into a table body with the `makeBody` command.
 
 ## Documentation
 
