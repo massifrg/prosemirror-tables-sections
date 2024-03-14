@@ -37,6 +37,7 @@ import {
   toggleHeaderCell,
   goToNextCell,
   deleteTable,
+  setComputedStyleColumnWidths,
 } from '../src';
 import { tableEditing, columnResizing, tableNodes, fixTables } from '../src';
 
@@ -67,6 +68,7 @@ function item(label: string, cmd: (state: EditorState) => boolean) {
   return new MenuItem({ label, select: cmd, run: cmd });
 }
 const tableMenu = [
+  item('Set column widths with getComputedStyle', setComputedStyleColumnWidths),
   item('Add table caption', addCaption),
   item('Delete table caption', deleteCaption),
   item('Add table head', addTableHead),
