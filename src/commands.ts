@@ -39,9 +39,7 @@ import {
   tableHasHead,
   tableSectionsCount,
 } from './util';
-import {
-  columnResizingPluginKey,
-} from './columnresizing';
+import { columnResizingPluginKey } from './columnresizing';
 
 /**
  * @public
@@ -1274,4 +1272,107 @@ export function deleteTable(
     }
   }
   return false;
+}
+
+function sameWidths(w1: number[], w2: number[]) {
+  if (w1.length !== w2.length) return false;
+  for (let i = 0; i < w1.length; i++) {
+    if (w1[i] !== w2[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * Command function that sets the column widths of the inner table
+ * in the selection to the values obtained with window.getComputedStyle.
+ *
+ * @public
+ */
+export function setComputedStyleColumnWidths(
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+  view?: EditorView,
+): boolean {
+  if (!isInTable(state)) return false;
+  if (view && dispatch) {
+    const { doc, selection } = state;
+    let table: Node;
+    let tableStart: number;
+    let map: TableMap;
+    let left: number;
+    let right: number;
+    if (selection instanceof CellSelection && selection.isColSelection()) {
+      const { $anchorCell, $headCell } = selection;
+      table = $anchorCell.node(-2);
+      tableStart = $anchorCell.start(-2);
+      map = TableMap.get(table);
+      const rect = map.rectBetween(
+        $anchorCell.pos - tableStart,
+        $headCell.pos - tableStart,
+      );
+      left = rect.left;
+      right = rect.right;
+    } else {
+      const $head = selection.$head;
+      const d = tableDepth($head);
+      table = $head.node(d);
+      tableStart = $head.start(d);
+      map = TableMap.get(table);
+      left = 0;
+      right = map.width;
+    }
+    let actualWidths: (number | null)[] = Array(right - left).fill(null);
+    for (let row = 0; row < map.height; row++) {
+      for (let col = left; col < right; col++) {
+        const pos = map.positionAt(row, col, table) + tableStart;
+        const cell = doc.nodeAt(pos);
+        const domNode = view.nodeDOM(pos);
+        if (domNode) {
+          const colwidth = Math.round(
+            parseFloat(
+              window.getComputedStyle(domNode as HTMLTableCellElement).width,
+            ),
+          );
+          if (colwidth) {
+            const colspan = cell?.attrs?.colspan;
+            if (colspan > 1) {
+              const aw = -colwidth / colspan;
+              for (let i = 0; i < colspan; i++)
+                actualWidths[col - left + i] = aw;
+              col += colspan - 1;
+            } else {
+              actualWidths[col - left] = colwidth;
+            }
+          }
+        }
+      }
+      if (actualWidths.every((aw) => aw !== null && aw >= 0)) break;
+    }
+    actualWidths = actualWidths.map((aw) => (aw !== null && aw < 0 ? -aw : aw));
+    console.log(actualWidths);
+    const tr = state.tr;
+    const updated: number[] = [];
+    for (let r = map.height - 1; r >= 0; r--) {
+      for (let c = right - 1; c >= left; c--) {
+        const pos = map.positionAt(r, c, table) + tableStart;
+        if (updated.includes(pos)) continue;
+        else updated.push(pos);
+        const cell = doc.nodeAt(pos);
+        if (cell) {
+          const attrs = cell.attrs as CellAttrs;
+          const colspan = attrs.colspan || 1;
+          const colwidth = actualWidths.slice(
+            c - left,
+            c - left + colspan,
+          ) as number[];
+          if (!attrs.colwidth || sameWidths(colwidth, attrs.colwidth)) {
+            tr.setNodeMarkup(pos, null, { ...attrs, colwidth });
+          }
+        }
+      }
+    }
+    if (tr.docChanged) view.dispatch(tr);
+    return true;
+  }
+  return true;
 }
