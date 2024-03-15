@@ -1196,9 +1196,7 @@ function findNextCell($cell: ResolvedPos, dir: Direction): number | null {
   const tableStart = $cell.start(-2);
   if (dir < 0) {
     const before = $cell.nodeBefore;
-    if (before) {
-      return $cell.pos - before.nodeSize;
-    }
+    if (before) return $cell.pos - before.nodeSize;
     for (
       let row = $cell.index(-2) - 1, rowEnd = $cell.before();
       row >= 0;
@@ -1321,7 +1319,7 @@ export function setComputedStyleColumnWidths(
       left = 0;
       right = map.width;
     }
-    let actualWidths: (number | null)[] = Array(right - left).fill(null);
+    let computedWidths: (number | null)[] = Array(right - left).fill(null);
     for (let row = 0; row < map.height; row++) {
       for (let col = left; col < right; col++) {
         const pos = map.positionAt(row, col, table) + tableStart;
@@ -1338,22 +1336,24 @@ export function setComputedStyleColumnWidths(
             if (colspan > 1) {
               const aw = -colwidth / colspan;
               for (let i = 0; i < colspan; i++)
-                actualWidths[col - left + i] = aw;
+                computedWidths[col - left + i] = aw;
               col += colspan - 1;
             } else {
-              actualWidths[col - left] = colwidth;
+              computedWidths[col - left] = colwidth;
             }
           }
         }
       }
-      if (actualWidths.every((aw) => aw !== null && aw >= 0)) break;
+      if (computedWidths.every((aw) => aw !== null && aw >= 0)) break;
     }
-    actualWidths = actualWidths.map((aw) => (aw !== null && aw < 0 ? -aw : aw));
-    console.log(actualWidths);
+    computedWidths = computedWidths.map((aw) =>
+      aw !== null && aw < 0 ? -aw : aw,
+    );
+    // console.log(computedWidths);
     const tr = state.tr;
     const updated: number[] = [];
-    for (let r = map.height - 1; r >= 0; r--) {
-      for (let c = right - 1; c >= left; c--) {
+    for (let r = 0; r < map.height; r++) {
+      for (let c = left; c < right; c++) {
         const pos = map.positionAt(r, c, table) + tableStart;
         if (updated.includes(pos)) continue;
         else updated.push(pos);
@@ -1361,11 +1361,16 @@ export function setComputedStyleColumnWidths(
         if (cell) {
           const attrs = cell.attrs as CellAttrs;
           const colspan = attrs.colspan || 1;
-          const colwidth = actualWidths.slice(
+          const colwidth = computedWidths.slice(
             c - left,
             c - left + colspan,
           ) as number[];
-          if (!attrs.colwidth || sameWidths(colwidth, attrs.colwidth)) {
+          if (!attrs.colwidth || !sameWidths(colwidth, attrs.colwidth)) {
+            // console.log(
+            //   `current colwidth: ${(
+            //     attrs.colwidth || []
+            //   ).join()}: new colwidth: ${colwidth.join()}`,
+            // );
             tr.setNodeMarkup(pos, null, { ...attrs, colwidth });
           }
         }
