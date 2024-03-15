@@ -464,7 +464,6 @@ function findBadColWidths(
     const pos = map.map[i];
     if (seen[pos]) continue;
     seen[pos] = true;
-    // const node = section.nodeAt(pos - 1);
     const node = table.nodeAt(pos);
     if (!node) {
       throw new RangeError(`No cell with offset ${pos} found`);
@@ -481,13 +480,12 @@ function findBadColWidths(
       )
         (updated || (updated = freshColWidth(attrs)))[j] = colWidth;
     }
-    if (updated) {
+    if (updated)
       map.problems.unshift({
         type: 'colwidth mismatch',
         pos,
         colwidth: updated,
       });
-    }
   }
 }
 

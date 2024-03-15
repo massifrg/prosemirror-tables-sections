@@ -25,8 +25,8 @@ export class TableView implements NodeView {
   update(node: ProsemirrorNode): boolean {
     if (node.type != this.node.type) return false;
     this.node = node;
-    const pos = this.getPos();
     updateColumnsOnResize(node, this.contentDOM, this.cellMinWidth);
+    // const pos = this.getPos();
     // if (pos) console.log(getTableWidths(node, pos + 1, this.cellMinWidth));
     return true;
   }

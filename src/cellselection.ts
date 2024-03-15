@@ -15,10 +15,10 @@ import {
 import { Decoration, DecorationSet, DecorationSource } from 'prosemirror-view';
 
 import { Mappable } from 'prosemirror-transform';
-import { getRow, rowAtPos, rowsCount } from './util';
 import { TableMap } from './tablemap';
 import { CellAttrs, inSameTable, pointsAtCell, removeColSpan } from './util';
 import { isTableSectionRole } from './schema';
+import { getRow, rowAtPos, rowsCount } from './util';
 
 /**
  * @public
@@ -53,18 +53,12 @@ export class CellSelection extends Selection {
   // cell.
   constructor($anchorCell: ResolvedPos, $headCell: ResolvedPos = $anchorCell) {
     const table = $anchorCell.node(-2);
-    // console.log(`$anchorCell.node(-2) is a ${table.type.name}`)
     const map = TableMap.get(table);
-    // console.log(map)
     const tableStart = $anchorCell.start(-2);
-    // console.log(`tableStart is ${tableStart}`)
-    // console.log(`node at tableStart is ${$anchorCell.node(0).nodeAt(tableStart)!.type.name}`)
     const rect = map.rectBetween(
       $anchorCell.pos - tableStart,
       $headCell.pos - tableStart,
     );
-    // console.log(`CellSelection rect:`);
-    // console.log(rect);
 
     const doc = $anchorCell.node(0);
     const cells = map
@@ -73,7 +67,6 @@ export class CellSelection extends Selection {
     // Make the head cell the first range, so that it counts as the
     // primary part of the selection
     cells.unshift($headCell.pos - tableStart);
-    // console.log(`CELLS: ${cells.join()}`);
     const ranges = cells.map((pos) => {
       const cell = table.nodeAt(pos);
       if (!cell) {
@@ -182,6 +175,7 @@ export class CellSelection extends Selection {
       const rowNode = getRow(table, row).node;
       rows.push(rowNode!.copy(Fragment.from(rowContent)));
     }
+
     const fragment =
       this.isColSelection(map) && this.isRowSelection() ? table : rows;
     return new Slice(Fragment.from(fragment), 1, 1);
@@ -233,7 +227,6 @@ export class CellSelection extends Selection {
     const tableStart = this.$anchorCell.start(-2);
     const anchorTop = rowAtPos(table, this.$anchorCell.pos - tableStart);
     const headTop = rowAtPos(table, this.$headCell.pos - tableStart);
-    // console.log(`anchorTop=${anchorTop}, headTop=${headTop}`);
     if (Math.min(anchorTop, headTop) > 0) return false;
 
     const anchorBottom: number =
@@ -488,29 +481,22 @@ export function normalizeSelection(
   let role: string | undefined;
   if (sel instanceof NodeSelection && (role = sel.node.type.spec.tableRole)) {
     if (role == 'cell' || role == 'header_cell') {
-      // console.log(`normalizeSelection: CELL selection from ${sel.from}`);
       normalize = CellSelection.create(doc, sel.from);
     } else if (role == 'row') {
-      // console.log(`normalizeSelection: ROW selection`);
       const $cell = doc.resolve(sel.from + 1);
       normalize = CellSelection.rowSelection($cell, $cell);
     } else if (isTableSectionRole(role)) {
-      // console.log(`normalizeSelection: SECTION selection`);
       const $cell = doc.resolve(sel.from + 2);
       normalize = CellSelection.sectionSelection($cell, $cell);
     } else if (!allowTableNodeSelection) {
-      // console.log(`normalizeSelection: TABLE selection`);
       const map = TableMap.get(sel.node);
       const start = sel.from + 1;
       const lastCell = start + map.map[map.width * map.height - 1];
-      // console.log(`normalizeSelection, start=${start}, lastCell=${lastCell}`);
       normalize = CellSelection.create(doc, start + 2, lastCell);
     }
   } else if (sel instanceof TextSelection && isCellBoundarySelection(sel)) {
-    // console.log(`normalizeSelection: TEXT IN CELL selection`);
     normalize = TextSelection.create(doc, sel.from);
   } else if (sel instanceof TextSelection && isTextSelectionAcrossCells(sel)) {
-    // console.log(`normalizeSelection: TEXT ACROSS CELLS selection`);
     normalize = TextSelection.create(doc, sel.$from.start(), sel.$from.end());
   }
   if (normalize) (tr || (tr = state.tr)).setSelection(normalize);
