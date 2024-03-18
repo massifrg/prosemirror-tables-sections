@@ -1,6 +1,11 @@
 // Various helper function for working with tables
 
-import { EditorState, NodeSelection, PluginKey } from 'prosemirror-state';
+import {
+  EditorState,
+  NodeSelection,
+  PluginKey,
+  Selection,
+} from 'prosemirror-state';
 import { Attrs, Node, ResolvedPos } from 'prosemirror-model';
 import { CellSelection } from './cellselection';
 import { isTableSection, tableNodeTypes } from './schema';
@@ -42,25 +47,6 @@ export function cellWrapping($pos: ResolvedPos): null | Node {
     if (role === 'cell' || role === 'header_cell') return $pos.node(d);
   }
   return null;
-}
-
-/**
- * @public
- */
-export function isInTable(state: EditorState): boolean {
-  const $head = state.selection.$head;
-  for (let d = $head.depth; d > 0; d--)
-    if ($head.node(d).type.spec.tableRole == 'row') return true;
-  return false;
-}
-
-/**
- * @internal
- */
-export function tableDepth($pos: ResolvedPos): number {
-  for (let d = $pos.depth; d >= 0; d--)
-    if ($pos.node(d).type.spec.tableRole == 'table') return d;
-  return -1;
 }
 
 /**
@@ -354,4 +340,30 @@ export function isRowLastInSection(table: Node, row: number): boolean {
     if (row < rowsMinusOne) return false;
   }
   return false;
+}
+
+/**
+ * @public
+ */
+export function isInTable(state: EditorState): boolean {
+  const $head = state.selection.$head;
+  for (let d = $head.depth; d > 0; d--)
+    if ($head.node(d).type.spec.tableRole == 'row') return true;
+  return false;
+}
+
+/**
+ * @internal
+ */
+export function tableDepth($pos: ResolvedPos): number {
+  for (let d = $pos.depth; d >= 0; d--)
+    if ($pos.node(d).type.spec.tableRole == 'table') return d;
+  return -1;
+}
+
+export function innerTableInSelection(selection: Selection): Node | undefined {
+  const depth = tableDepth(selection.$head);
+  if (depth >= 0) {
+    return selection.$head.node(depth);
+  }
 }

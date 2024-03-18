@@ -25,7 +25,38 @@ to show a simple demo of how the module can be used.
 
 ## Version
 
-This is version 0.6.0, and it goes back to the implementation
+This is version 0.6.1.
+
+It adds two commands:
+
+- `setComputedStyleColumnWidths`, that sets the cells widths of a table
+  to the actual values you may have set with CSS.
+  It uses [window.getComputedStyle](https://developer.mozilla.org/en-US/docs/Web/API/Window/getComputedStyle)
+  to retrieve those widths.
+  If there's a column selection, it sets the widths of the selected columns' cells only,
+  otherwise it sets all the cells widths of the (inner) table in the selection.
+
+- `setRelativeColumnWidths(widths: number[], minwidth?: number)`,
+  that returns a [Command](https://prosemirror.net/docs/ref/#state.Command)
+  to set the relative widths of the (inner) table in the selection.
+  The relative widths must be in the range 0..1.
+  
+  The table width is the one obtained with [window.getComputedStyle](https://developer.mozilla.org/en-US/docs/Web/API/Window/getComputedStyle).
+  The new cells will get a _col width_ = _rel width_ * _table width_.
+  
+  If you specify `minwidth`, the columns will not be narrower than that.
+
+  If `widths.length` is greater than the number of columns, 
+  the exceeding widths will be ignored.
+
+  If `widths.length` is lesser than the number of columns,
+  only the first column widths will be set.
+
+The code of this version has been checked with the current version of
+[prosemirror-tables](https://github.com/ProseMirror/prosemirror-tables)
+(resulting in a bug being fixed).
+
+Since version 0.6.0 the code goes back to the implementation
 of `columnresizing.ts` and `tableview.ts` you find in the original
 [prosemirror-tables](https://github.com/ProseMirror/prosemirror-tables),
 adapted to table sections.
