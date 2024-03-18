@@ -1305,7 +1305,7 @@ function updateColumnWidthsTransaction(
   for (let r = 0; r < map.height; r++) {
     for (let c = left; c < right; c++) {
       const pos = map.positionAt(r, c, table) + tableStart;
-      if (updated.includes(pos)) continue;
+      if (updated.indexOf(pos) >= 0) continue;
       else updated.push(pos);
       const cell = doc.nodeAt(pos);
       if (cell) {
