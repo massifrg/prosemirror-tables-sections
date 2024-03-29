@@ -140,7 +140,7 @@ export class TableMap {
       if (curPos != pos) continue;
 
       const left = i % this.width;
-      const top = i / this.width || 0;
+      const top = i / this.width | 0;
       let right = left + 1;
       let bottom = top + 1;
 
