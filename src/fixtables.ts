@@ -4,12 +4,7 @@
 // reported by `TableMap`.
 
 import { Node } from 'prosemirror-model';
-import {
-  EditorState,
-  NodeSelection,
-  PluginKey,
-  Transaction,
-} from 'prosemirror-state';
+import { EditorState, PluginKey, Transaction } from 'prosemirror-state';
 import { tableNodeTypes, TableRole } from './schema';
 import { TableMap } from './tablemap';
 import { CellAttrs, getRow, removeColSpan } from './util';
@@ -144,14 +139,10 @@ export function fixTable(
       const nodes: Node[] = [];
       for (let j = 0; j < add; j++) {
         const node = tableNodeTypes(state.schema)[role].createAndFill();
-
         if (node) nodes.push(node);
       }
       const side = (i == 0 || first == i - 1) && last == i ? pos + 1 : end - 1;
-      // console.log(
-      //   `i(row)=${i} pos=${pos}, end=${end}, cells to add=${add}, side=${side}`,
-      // );
-      tr.insert(tr.mapping.map(side + 1), nodes);
+      tr.insert(tr.mapping.map(tablePos + side + 1), nodes);
     }
   }
   return tr.setMeta(fixTablesKey, { fixTables: true });

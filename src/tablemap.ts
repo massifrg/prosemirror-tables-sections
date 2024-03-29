@@ -17,31 +17,49 @@ import { CellAttrs, getRow } from './util';
  */
 export type ColWidths = number[];
 
+export type ProblemType =
+  | 'colwidth mismatch'
+  | 'collision'
+  | 'missing'
+  | 'overlong_rowspan';
+
+export interface BaseProblem {
+  type: ProblemType;
+}
+
+export interface ProblemColwidthMismatch extends BaseProblem {
+  type: 'colwidth mismatch';
+  pos: number;
+  colwidth: ColWidths;
+}
+
+export interface ProblemCollision extends BaseProblem {
+  type: 'collision';
+  pos: number;
+  row: number;
+  n: number;
+}
+
+export interface ProblemMissing extends BaseProblem {
+  type: 'missing';
+  row: number;
+  n: number;
+}
+
+export interface ProblemOverlongRowspan extends BaseProblem {
+  type: 'overlong_rowspan';
+  pos: number;
+  n: number;
+}
+
 /**
  * @public
  */
 export type Problem =
-  | {
-      type: 'colwidth mismatch';
-      pos: number;
-      colwidth: ColWidths;
-    }
-  | {
-      type: 'collision';
-      pos: number;
-      row: number;
-      n: number;
-    }
-  | {
-      type: 'missing';
-      row: number;
-      n: number;
-    }
-  | {
-      type: 'overlong_rowspan';
-      pos: number;
-      n: number;
-    };
+  | ProblemColwidthMismatch
+  | ProblemCollision
+  | ProblemMissing
+  | ProblemOverlongRowspan;
 
 let readFromCache: (key: Node) => TableMap | undefined;
 let addToCache: (key: Node, value: TableMap) => TableMap;
@@ -122,7 +140,7 @@ export class TableMap {
       if (curPos != pos) continue;
 
       const left = i % this.width;
-      const top = (i / this.width) | 0;
+      const top = i / this.width || 0;
       let right = left + 1;
       let bottom = top + 1;
 
@@ -261,7 +279,7 @@ export class TableMap {
     let rows = 0,
       nextRows = 0;
     for (let s = 0; s < this.sectionRows.length; s++) {
-      const nextRows = rows + this.sectionRows[s];
+      nextRows = rows + this.sectionRows[s];
       if (top < rows)
         return {
           left: 0,
@@ -309,6 +327,7 @@ function computeMap(table: Node): TableMap {
 
   let offset = 0;
   let colWidths: ColWidths = [];
+  let rowsOffset = 0;
   for (let c = 0; c < table.childCount; c++) {
     const section = table.child(c);
     if (isTableSection(section)) {
@@ -316,12 +335,17 @@ function computeMap(table: Node): TableMap {
       let smap = computeSectionMap(section, width, offset + 1, colWidths);
       tmap.map = tmap.map.concat(smap.map);
       if (smap.problems) {
-        tmap.problems = (tmap.problems || []).concat(smap.problems);
+        tmap.problems = tmap.problems || [];
+        smap.problems.forEach((prob) => {
+          if (prob.type === 'missing' || prob.type === 'collision')
+            prob.row += rowsOffset;
+          tmap.problems?.push(prob);
+        });
       }
+      rowsOffset += section.childCount;
     }
     offset += section.nodeSize;
   }
-
   let badWidths = false;
 
   // For columns that have defined widths, but whose widths disagree
@@ -341,7 +365,7 @@ function computeSectionMap(
   colWidths: ColWidths,
 ): TableMap {
   if (!isTableSection(section))
-    throw new RangeError('Not a table section node: ' + section.type.name);
+    throw new Error('Not a table section node: ' + section.type.name);
   const height = section.childCount;
   const map = [];
   let mapPos = 0;
