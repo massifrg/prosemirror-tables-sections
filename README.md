@@ -25,9 +25,12 @@ to show a simple demo of how the module can be used.
 
 ## Version
 
-This is version 0.6.1.
+This is version 0.6.3.
 
-It adds two commands:
+It fixes a nasty bug in the detection of table problems (e.g. missing or colliding cells),
+that are then fixed by `fixTables`.
+
+Since version 0.6.1, two commands have been added:
 
 - `setComputedStyleColumnWidths`, that sets the cells widths of a table
   to the actual values you may have set with CSS.
