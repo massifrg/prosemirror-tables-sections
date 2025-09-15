@@ -131,7 +131,6 @@ function arrow(axis: Axis, dir: Direction): Command {
     if (!view) return false;
     const sel = state.selection;
     if (sel.$from.depth === 0) return false;
-    console.log(sel)
     if (sel instanceof CellSelection) {
       return maybeSetSelection(
         state,
