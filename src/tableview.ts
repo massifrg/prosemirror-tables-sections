@@ -1,5 +1,5 @@
 import { Node as ProsemirrorNode } from 'prosemirror-model';
-import { EditorView, NodeView } from 'prosemirror-view';
+import { EditorView, NodeView, ViewMutationRecord } from 'prosemirror-view';
 import { CellAttrs, getRow } from './util';
 
 /**
@@ -31,7 +31,7 @@ export class TableView implements NodeView {
     return true;
   }
 
-  ignoreMutation(record: MutationRecord): boolean {
+  ignoreMutation(record: ViewMutationRecord): boolean {
     const table = this.contentDOM
     const colgroup = getColgroup(table)
     return (
