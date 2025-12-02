@@ -42,9 +42,12 @@ import {
 } from '../src';
 import { tableEditing, columnResizing, tableNodes, fixTables } from '../src';
 
+const relativeColWidths = true;
+
 const schema = new Schema({
   nodes: baseSchema.spec.nodes.append(
     tableNodes({
+      relativeColWidths,
       tableGroup: 'block',
       cellContent: 'block+',
       cellAttributes: {
@@ -70,7 +73,10 @@ function item(label: string, cmd: (state: EditorState) => boolean) {
 }
 const tableMenu = [
   item('Set column widths with getComputedStyle', setComputedStyleColumnWidths),
-  item('Set column widths to 20%, 60%, 20%', setRelativeColumnWidths([.2, .6, .2])),
+  item(
+    'Set column widths to 20%, 60%, 20%',
+    setRelativeColumnWidths([0.2, 0.6, 0.2]),
+  ),
   item('Add table caption', addCaption),
   item('Delete table caption', deleteCaption),
   item('Add table head', addTableHead),
@@ -107,7 +113,7 @@ const doc = DOMParser.fromSchema(schema).parse(contentElement);
 let state = EditorState.create({
   doc,
   plugins: [
-    columnResizing(),
+    columnResizing({ relativeColWidths }),
     tableEditing(),
     keymap({
       Tab: goToNextCell(1),

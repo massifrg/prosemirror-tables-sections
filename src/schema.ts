@@ -100,6 +100,11 @@ export interface TableNodesOptions {
    * objects with the following properties:
    */
   cellAttributes: { [key: string]: CellAttributes };
+
+  /**
+   * Column widths are relative (shares of the table width).
+   */
+  relativeColWidths?: boolean;
 }
 
 /**
@@ -145,9 +150,49 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
       tableRole: 'table',
       isolating: true,
       group: options.tableGroup,
-      parseDOM: [{ tag: 'table' }],
-      toDOM() {
-        return ['table', 0];
+      attrs: options.relativeColWidths
+        ? {
+            colwidth: {
+              default: null,
+            },
+            width: {
+              default: null,
+            },
+          }
+        : {},
+      parseDOM: [
+        {
+          tag: 'table',
+          getAttrs(tableEl) {
+            if (options.relativeColWidths) {
+              const widthAttr = tableEl.getAttribute('data-colwidth');
+              const colwidth =
+                (widthAttr &&
+                  /^[0-9.]+%?(,[0-9.]+%?)*$/.test(widthAttr) &&
+                  widthAttr
+                    .split(',')
+                    .map((s) =>
+                      s.endsWith('%') ? parseFloat(s) / 100 : Number(s),
+                    )) ||
+                [];
+              const width = tableEl.getAttribute('data-width');
+              return { colwidth, width };
+            }
+            return null;
+          },
+        },
+      ],
+      toDOM(node) {
+        return options.relativeColWidths
+          ? [
+              'table',
+              {
+                'data-colwidth': node.attrs.colwidth,
+                'data-width': node.attrs.width,
+              },
+              0,
+            ]
+          : ['table', 0];
       },
     },
     table_caption: {
