@@ -43,6 +43,7 @@ import {
 import { tableEditing, columnResizing, tableNodes, fixTables } from '../src';
 
 const relativeColWidths = true;
+const lastColumnResizable = true;
 
 const schema = new Schema({
   nodes: baseSchema.spec.nodes.append(
@@ -113,7 +114,7 @@ const doc = DOMParser.fromSchema(schema).parse(contentElement);
 let state = EditorState.create({
   doc,
   plugins: [
-    columnResizing({ relativeColWidths }),
+    columnResizing({ relativeColWidths, lastColumnResizable }),
     tableEditing(),
     keymap({
       Tab: goToNextCell(1),

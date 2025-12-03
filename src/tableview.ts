@@ -77,11 +77,8 @@ export class TableView implements NodeView {
 
   ignoreMutation(record: ViewMutationRecord): boolean {
     const table = this.contentDOM;
-    const colgroup = getColgroup(table);
-    return (
-      record.type == 'attributes' &&
-      (record.target == table || (colgroup && colgroup.contains(record.target)))
-    );
+    const target = record.target;
+    return target == table || table.contains(target);
   }
 }
 
@@ -135,64 +132,28 @@ export function updateColumnsOnResize(
   let fixedWidth = true;
   const colgroup = getColgroup(table);
   if (!colgroup) return;
-  let nextDOM = colgroup.firstChild as HTMLElement;
+  let cssWidths: string[] = [];
   if (relativeColWidths) {
     const columnsCount = TableMap.get(node).width;
-    let colwidth: number[] = node.attrs.colwidth || [];
-    // const tableWidthAttr = node.attrs.width;
-    const tableWidthAttr = table.getAttribute('data-width');
-    const isColwidthSet = colwidth.length === columnsCount;
-    const isTableWidthSet = !!tableWidthAttr;
-    while (colwidth.length < columnsCount) colwidth.push(0);
-    fixedWidth = !colwidth.find((w) => w === 0);
-    let widths = getColgroupWidths(table);
-    if (widths.length === 0) {
-      const tableWidth = tableWidthAttr && parseFloat(tableWidthAttr);
-      if (
-        !overrideCol &&
-        // isColwidthSet &&
-        tableWidth &&
-        tableWidth > defaultCellMinWidth * columnsCount
-      ) {
-        const autoColumns = colwidth.reduce(
-          (count, cw) => (cw === 0 ? count + 1 : count),
-          0,
-        );
-        const freeWidth =
-          (1 - colwidth.reduce((acc, cw) => acc + cw, 0)) * tableWidth;
-        widths = colwidth.map((cw) =>
-          cw === 0 ? freeWidth / autoColumns : cw * tableWidth,
-        );
-      } else widths = Array(columnsCount).fill(defaultCellMinWidth);
-    }
-    if (overrideCol !== undefined)
-      widths[overrideCol] = overrideValue || defaultCellMinWidth;
-    const tableNewWidth = widths.reduce((acc, w) => acc + w, 0);
-    totalWidth = tableNewWidth;
-    if (overrideCol !== undefined && isColwidthSet) {
-      colwidth.forEach((cw, i) => {
-        if (cw != 0) widths[i] = cw * totalWidth;
-      });
-      colwidth[overrideCol] = overrideValue! / totalWidth;
-      table.setAttribute('data-colwidth', colwidth.toString());
-    }
-    if (!isColwidthSet) {
-      table.setAttribute('data-colwidth', node.attrs.colwidth);
-    }
-    if (!isTableWidthSet) {
-      table.setAttribute('data-width', Math.round(tableNewWidth).toString());
-    }
-    const cssWidths = widths.map((w) => w + 'px');
-    for (let i = 0; i < cssWidths.length; i++) {
-      const cssWidth = cssWidths[i];
-      if (!nextDOM) {
-        colgroup.appendChild(document.createElement('COL')).style.width =
-          cssWidth;
-      } else {
-        if (nextDOM.style.width != cssWidth) nextDOM.style.width = cssWidth;
-        nextDOM = nextDOM.nextSibling as HTMLElement;
-      }
-    }
+    let colwidth: number[] = node.attrs.colwidth;
+    colwidth =
+      colwidth && colwidth.length === columnsCount
+        ? colwidth
+        : Array(columnsCount).fill(0);
+    let tableWidth =
+      node.attrs.width || parseFloat(window.getComputedStyle(table).width);
+    fixedWidth = !colwidth.find((cw) => cw === 0);
+    const widths: number[] = colwidth.map((cw, i) =>
+      i === overrideCol
+        ? overrideValue!
+        : cw === 0
+          ? defaultCellMinWidth
+          : cw * tableWidth,
+    );
+    totalWidth = widths.reduce((acc, w) => acc + w, 0);
+    cssWidths = widths.map((w) => w + 'px');
+    table.setAttribute('data-colwidth', colwidth.toString());
+    table.setAttribute('data-width', Math.round(totalWidth).toString());
   } else {
     const row = getRow(node, 0).node;
     if (!row) return;
@@ -201,17 +162,22 @@ export function updateColumnsOnResize(
       for (let j = 0; j < colspan; j++, col++) {
         const hasWidth =
           overrideCol == col ? overrideValue : colwidth && colwidth[j];
-        const cssWidth = hasWidth ? hasWidth + 'px' : '';
+        cssWidths[col] = hasWidth ? hasWidth + 'px' : '';
         totalWidth += hasWidth || defaultCellMinWidth;
         if (!hasWidth) fixedWidth = false;
-        if (!nextDOM) {
-          colgroup.appendChild(document.createElement('COL')).style.width =
-            cssWidth;
-        } else {
-          if (nextDOM.style.width != cssWidth) nextDOM.style.width = cssWidth;
-          nextDOM = nextDOM.nextSibling as HTMLElement;
-        }
       }
+    }
+  }
+
+  let nextDOM = colgroup.firstChild as HTMLElement;
+  for (let i = 0; i < cssWidths.length; i++) {
+    const cssWidth = cssWidths[i];
+    if (!nextDOM) {
+      colgroup.appendChild(document.createElement('COL')).style.width =
+        cssWidth;
+    } else {
+      if (nextDOM.style.width != cssWidth) nextDOM.style.width = cssWidth;
+      nextDOM = nextDOM.nextSibling as HTMLElement;
     }
   }
 

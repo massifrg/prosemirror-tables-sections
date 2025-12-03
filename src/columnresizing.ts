@@ -58,6 +58,11 @@ export type ColumnResizingOptions = {
  */
 export type Dragging = { startX: number; startWidth: number };
 
+type ResizeAction = {
+  setHandle: number;
+  setDragging: Dragging | false;
+};
+
 /**
  * @public
  */
@@ -143,7 +148,7 @@ export class ResizeState {
   apply(tr: Transaction): ResizeState {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const state = this;
-    const action = tr.getMeta(columnResizingPluginKey);
+    const action: ResizeAction = tr.getMeta(columnResizingPluginKey);
     if (action && action.setHandle != null)
       return new ResizeState(action.setHandle, false);
     if (action && action.setDragging !== undefined)
@@ -232,7 +237,7 @@ function handleMouseDown(
   view.dispatch(
     view.state.tr.setMeta(columnResizingPluginKey, {
       setDragging: { startX: event.clientX, startWidth: width },
-    }),
+    } as ResizeAction),
   );
 
   function finish(event: MouseEvent) {
@@ -241,7 +246,7 @@ function handleMouseDown(
     const pluginState = columnResizingPluginKey.getState(view.state);
     if (pluginState?.dragging) {
       if (relativeColWidths)
-        updateColumnWidthRelative(view, pluginState.activeHandle);
+        updateColumnWidthRelative(view, pluginState.activeHandle, cellMinWidth);
       else
         updateColumnWidth(
           view,
@@ -265,7 +270,7 @@ function handleMouseDown(
         pluginState.activeHandle,
         dragged,
         defaultCellMinWidth,
-        relativeColWidths
+        relativeColWidths,
       );
     }
   }
@@ -275,7 +280,7 @@ function handleMouseDown(
     pluginState.activeHandle,
     width,
     defaultCellMinWidth,
-    relativeColWidths
+    relativeColWidths,
   );
 
   win.addEventListener('mouseup', finish);
@@ -374,7 +379,7 @@ function updateHandle(view: EditorView, value: number): void {
   view.dispatch(
     view.state.tr.setMeta(columnResizingPluginKey, {
       setHandle: value,
-    }),
+    } as ResizeAction),
   );
 }
 
@@ -407,7 +412,11 @@ function updateColumnWidth(
   if (tr.docChanged) view.dispatch(tr);
 }
 
-function updateColumnWidthRelative(view: EditorView, cell: number): void {
+function updateColumnWidthRelative(
+  view: EditorView,
+  cell: number,
+  minWidth: number,
+): void {
   const $cell = view.state.doc.resolve(cell);
   const table = $cell.node(-2),
     map = TableMap.get(table),
@@ -419,15 +428,26 @@ function updateColumnWidthRelative(view: EditorView, cell: number): void {
   while (tableEl && tableEl.tagName !== 'TABLE')
     tableEl = tableEl.parentElement as HTMLElement;
   if (tableEl) {
-    let colwidth: number[] = table.attrs.colwidth || zeroes(map.width);
-    const cellsWidth = getColgroupWidths(tableEl as HTMLTableElement);
-    const tableWidth = cellsWidth.reduce((acc, w) => acc + w, 0);
-    colwidth = cellsWidth.map((cw, i) => {
+    let colwidth: number[] = table.attrs.colwidth;
+    colwidth =
+      colwidth && colwidth.length === map.width ? colwidth : zeroes(map.width);
+    const colgroup_widths = getColgroupWidths(tableEl as HTMLTableElement);
+    let tableWidth =
+      colgroup_widths.length === map.width
+        ? colgroup_widths.reduce((acc, w) => acc + w, 0)
+        : parseFloat(window.getComputedStyle(tableEl).width);
+    const autoColumns = colwidth.reduce(
+      (count, cw) => (cw === 0 ? count + 1 : count),
+      0,
+    );
+    const autoColsWidth = minWidth * autoColumns;
+    tableWidth = Math.max(autoColsWidth, tableWidth);
+    colwidth = colgroup_widths.map((cw, i) => {
       if (i >= col && i < col + colspan) return cw / colspan / tableWidth;
       else return colwidth[i] > 0 ? cw / tableWidth : 0;
     });
     tr.setNodeAttribute(start - 1, 'colwidth', colwidth);
-    tr.setNodeAttribute(start - 1, 'width', tableWidth);
+    tr.setNodeAttribute(start - 1, 'width', Math.round(tableWidth).toString());
     if (tr.docChanged) view.dispatch(tr);
   }
 }

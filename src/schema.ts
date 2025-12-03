@@ -10,12 +10,16 @@ import {
 } from 'prosemirror-model';
 import { CellAttrs, MutableAttrs } from './util';
 
-function getCellAttrs(dom: HTMLElement | string, extraAttrs: Attrs): Attrs {
+function getCellAttrs(
+  dom: HTMLElement | string,
+  extraAttrs: Attrs,
+  relativeColWidths?: boolean,
+): Attrs {
   if (typeof dom === 'string') {
     return {};
   }
 
-  const widthAttr = dom.getAttribute('data-colwidth');
+  const widthAttr = !relativeColWidths && dom.getAttribute('data-colwidth');
   const widths =
     widthAttr && /^\d+(,\d+)*$/.test(widthAttr)
       ? widthAttr.split(',').map((s) => Number(s))
@@ -138,8 +142,8 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
   const cellAttrs: Record<string, AttributeSpec> = {
     colspan: { default: 1 },
     rowspan: { default: 1 },
-    colwidth: { default: null },
   };
+  if (!options.relativeColWidths) cellAttrs.colwidth = { default: null };
 
   for (const prop in extraAttrs)
     cellAttrs[prop] = { default: extraAttrs[prop].default };
@@ -165,17 +169,20 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
           tag: 'table',
           getAttrs(tableEl) {
             if (options.relativeColWidths) {
-              const widthAttr = tableEl.getAttribute('data-colwidth');
+              const colwidthAttr = tableEl.getAttribute('data-colwidth');
               const colwidth =
-                (widthAttr &&
-                  /^[0-9.]+%?(,[0-9.]+%?)*$/.test(widthAttr) &&
-                  widthAttr
+                (colwidthAttr &&
+                  /^[0-9.]+%?(,[0-9.]+%?)*$/.test(colwidthAttr) &&
+                  colwidthAttr
                     .split(',')
                     .map((s) =>
                       s.endsWith('%') ? parseFloat(s) / 100 : Number(s),
                     )) ||
                 [];
-              const width = tableEl.getAttribute('data-width');
+              const widthAttr = tableEl.getAttribute('data-width');
+              let width: number | null =
+                (widthAttr && parseFloat(widthAttr)) || 0;
+              width = width > 0 ? Math.round(width) : null;
               return { colwidth, width };
             }
             return null;
@@ -245,7 +252,11 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
       tableRole: 'cell',
       isolating: true,
       parseDOM: [
-        { tag: 'td', getAttrs: (dom) => getCellAttrs(dom, extraAttrs) },
+        {
+          tag: 'td',
+          getAttrs: (dom) =>
+            getCellAttrs(dom, extraAttrs, options.relativeColWidths),
+        },
       ],
       toDOM(node) {
         return ['td', setCellAttrs(node, extraAttrs), 0];
@@ -257,7 +268,11 @@ export function tableNodes(options: TableNodesOptions): TableNodes {
       tableRole: 'header_cell',
       isolating: true,
       parseDOM: [
-        { tag: 'th', getAttrs: (dom) => getCellAttrs(dom, extraAttrs) },
+        {
+          tag: 'th',
+          getAttrs: (dom) =>
+            getCellAttrs(dom, extraAttrs, options.relativeColWidths),
+        },
       ],
       toDOM(node) {
         return ['th', setCellAttrs(node, extraAttrs), 0];
